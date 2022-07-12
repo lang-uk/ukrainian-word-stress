@@ -1,0 +1,16 @@
+[project]
+name = "ukrainian_stress"
+description = "Set phonetic word stress in Ukrainian texts"
+version = "0.1.0"
+authors = [
+    { name = "Oleksiy Syvokon", email = "oleksiy.syvokon@gmail.com" }
+]
+dependencies = [
+    "stanza",
+    "marisa-trie",
+]
+
+[project.optional-dependencies]
+dev = [
+	"pytest",
+]
