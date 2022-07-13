@@ -32,7 +32,6 @@ class Stressify:
         return s
 
 
-
 def stressify(text: str) -> str:
     if not hasattr(stressify, "f"):
         stressify.f = Stressify()
@@ -51,13 +50,15 @@ def find_accent_positions(trie, parse) -> List[int]:
     """
 
     base = parse['text']
-    if base not in trie:
-        # non-dictionary words
+    for word in (base, base.lower(), base.title()):
+        if word in trie:
+            values = trie[word]
+            break
+    else:
+        # non-dictionary word
         return []
 
-    values = trie[base]
     assert len(values) == 1
-
     accents_by_tags = _parse_value(values[0])
 
     if len(accents_by_tags) == 1:

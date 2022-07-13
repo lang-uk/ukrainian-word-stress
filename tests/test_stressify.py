@@ -18,6 +18,13 @@ def test_depends_on_tags():
     assert stressify("золоті яйця") == f"золоті´ я´йця"
 
 
+def test_handle_case():
+    assert stressify("мама") == f"ма´ма"
+    assert stressify("Мама") == f"Ма´ма"
+    assert stressify("МАМА") == f"МА´МА"
+
+
+
 def test_find_accent_positions_single(trie):
     parse = {
         "id": 1,
