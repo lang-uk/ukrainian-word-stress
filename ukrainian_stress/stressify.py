@@ -1,25 +1,35 @@
+from enum import Enum
 from typing import List
 import marisa_trie
 
 
-ACCENT = '\u0301'
+class StressSymbol:
+    AcuteAccent = "´"
+    CombiningAcuteAccent = "\u0301"
 
 
 class Stressify:
 
-    def __init__(self, dict_path="./stress.v1.trie"):
+    def __init__(self, dict_path="./stress.v1.trie", stress_symbol=StressSymbol.AcuteAccent):
         import stanza
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
-        self.nlp = stanza.Pipeline('uk', 'tokenize,pos')
+        self.nlp = stanza.Pipeline(
+            'uk', 'tokenize,pos', download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES)
+        self.stress_symbol = stress_symbol
 
     def __call__(self, text):
         parsed = self.nlp(text)
         result = []
         for token in parsed.iter_tokens():
             accents = find_accent_positions(self.dict, token.to_dict()[0])
-            result.append(apply_accent_positions(token.text, accents))
+            result.append(self.apply_accent_positions(token.text, accents))
         return " ".join(result)  # restore original whitespace
+
+    def apply_accent_positions(self, s, positions):
+        for position in sorted(positions, reverse=True):
+            s = s[:position] + self.stress_symbol + s[position:]
+        return s
 
 
 
@@ -94,10 +104,4 @@ def _parse_value(value):
             accents_by_tags.append((tags, accents))
 
     return accents_by_tags
-
-
-def apply_accent_positions(s, positions):
-    for position in sorted(positions, reverse=True):
-        s = s[:position] + ACCENT + s[position:]
-    return s
 

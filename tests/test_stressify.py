@@ -4,20 +4,18 @@ import pytest
 
 
 
-@pytest.mark.skip()
 def test_single_syllable():
     assert stressify("а") == "а"
     assert stressify("кіт") == "кіт"
 
 
-@pytest.mark.skip()
 def test_single_choice():
-    assert stressify("Україна") == f"Украї{ACCENT}на"
+    assert stressify("Україна") == f"Украї´на"
 
 
 def test_depends_on_tags():
-    assert stressify("жодного яйця") == f"жодного яйця{ACCENT}"
-    assert stressify("золоті яйця") == f"золоті я{ACCENT}йця"
+    assert stressify("жодного яйця") == f"жо´дного яйця´"
+    assert stressify("золоті яйця") == f"золоті´ я´йця"
 
 
 def test_find_accent_positions_single(trie):
@@ -42,7 +40,14 @@ def test_find_accent_positions_single(trie):
 
 
 def test_find_accent_positions_mulitple(trie):
-    # сталеві яйця
+
+    # The word "яйця" that can have multiple stress positions,
+    # depending on whether it's used in a singular or plural form.
+    #
+    # find_accent_positions() should find the correct dictionary
+    # entry based on parse features.
+
+    # 1. Plural (as in "сталеві яйця")
     parse = {
         "id": 1,
         "text": "яйця",
@@ -55,6 +60,7 @@ def test_find_accent_positions_mulitple(trie):
     expected = [1]
     assert find_accent_positions(trie, parse) == expected
 
+    # 2. Singular genetive (as in "жодного яйця")
     parse = {
         "id": 1,
         "text": "яйця",
