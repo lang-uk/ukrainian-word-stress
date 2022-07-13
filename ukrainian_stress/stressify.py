@@ -1,3 +1,4 @@
+from typing import List
 import marisa_trie
 
 
@@ -16,7 +17,7 @@ class Stressify:
         parsed = self.nlp(text)
         result = []
         for token in parsed.iter_tokens():
-            accents = get_accent_positions(self.dict, token.to_dict()[0])
+            accents = find_accent_positions(self.dict, token.to_dict()[0])
             result.append(apply_accent_positions(token.text, accents))
         return " ".join(result)  # restore original whitespace
 
@@ -28,9 +29,20 @@ def stressify(text: str) -> str:
     return stressify.f(text)
 
 
-def get_accent_positions(trie, parse):
+def find_accent_positions(trie, parse) -> List[int]:
+    """Return best accent guess for the given token parsed tags.
+
+    Returns:
+        A list of accent positions. The size of the list can be:
+        0 for tokens that are not in the dictionary.
+        1 for most of in-dictionary words.
+        2 and more - for compound words and for words that have
+          multiple valid accents.
+    """
+
     base = parse['text']
     if base not in trie:
+        # non-dictionary words
         return []
 
     values = trie[base]
@@ -39,14 +51,29 @@ def get_accent_positions(trie, parse):
     accents_by_tags = _parse_value(values[0])
 
     if len(accents_by_tags) == 1:
+        # this word has no other stress options, so no need 
+        # to look at POS and tags
         return accents_by_tags[0][1]
 
-    for tags, accents in accents_by_tags.items():
-        if f'upos={parse["upos"]}' not in tags:
-            continue
-        return accents
+    # Match parsed word info with dictionary entries.
+    # Dictionary entries have tags like this:
+    #   Number=Plur|Case=Nom|upos=NOUN
+    # Parsed tags has the same format but have more irrelevant info
+    # and lack `upos` which we add separately
+    feats = parse['feats'].split('|') + [f'upos={parse["upos"]}']
+    for tags, accents in accents_by_tags:
+        if all(tag in feats for tag in tags.split('|')):
+            return accents
 
-    return []
+    # If we reach here:
+    # - the word have multiple stress options
+    # - none of them matched the dictionary
+    # At this point, the best we can do is to disregard parse
+    # and return a randomly chosen accent option.
+    # Ways to improve that in the future:
+    # - Return best partially matched option
+    # - Sort hyperonyms by frequency and return the most frequent one
+    return accents[0]
 
 
 def _parse_value(value):
@@ -61,8 +88,8 @@ def _parse_value(value):
     else:
         items = value.split(b'$')
         for item in items:
-            accents, _, tags = item.split(b'^')
-            accents = [int.from_bytes(b, 'little') for b in accents]
+            accents, _, tags = item.partition(b'^')
+            accents = [int(b) for b in accents]
             tags = tags.decode()
             accents_by_tags.append((tags, accents))
 
