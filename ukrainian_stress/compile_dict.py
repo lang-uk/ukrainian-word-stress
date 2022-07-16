@@ -3,6 +3,8 @@ import csv
 import collections
 import tqdm
 
+from ukrainian_stress.tags import compress_tags
+
 
 ACCENT = '\u0301'
 
@@ -12,13 +14,13 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
     for basic, forms in by_basic.items():
         accents_options = len(set(form for form, _ in forms))
         if accents_options == 1:
+            # no need to store tags if there's no ambiguity
             value = accent_pos(forms[0][0])
         else:
-            # TODO: compress multiple cases in a single record
             value = b''
             for form, tags in forms:
                 pos = accent_pos(form)
-                value += pos + b'^' + '|'.join(tags).encode() + b'$'
+                value += pos + b'^' + compress_tags(tags) + b'$'
         trie.append((basic, value))
     return marisa_trie.BytesTrie(trie)
 

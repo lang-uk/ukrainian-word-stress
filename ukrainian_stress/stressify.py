@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List
 
 from .mutable_text import MutableText
+from .tags import decompress_tags
 
 import marisa_trie
 
@@ -70,7 +71,7 @@ def find_accent_positions(trie, parse) -> List[int]:
         return []
 
     assert len(values) == 1
-    accents_by_tags = _parse_value(values[0])
+    accents_by_tags = _parse_dictionary_value(values[0])
 
     if len(accents_by_tags) == 0:
         # dictionary word with missing accents (dictionary has to be fixed)
@@ -82,13 +83,12 @@ def find_accent_positions(trie, parse) -> List[int]:
         return accents_by_tags[0][1]
 
     # Match parsed word info with dictionary entries.
-    # Dictionary entries have tags like this:
-    #   Number=Plur|Case=Nom|upos=NOUN
-    # Parsed tags has the same format but have more irrelevant info
-    # and lack `upos` which we add separately
+    # Dictionary entries have tags compressed to single byte codes.
+    # Parse tags is a superset of dictionary tags. They include more
+    # irrelevant info. They also and lack `upos` which we add separately
     feats = parse.get('feats', '').split('|') + [f'upos={parse["upos"]}']
     for tags, accents in accents_by_tags:
-        if all(tag in feats for tag in tags.split('|')):
+        if all(tag in feats for tag in tags):
             return accents
 
     # If we reach here:
@@ -102,21 +102,22 @@ def find_accent_positions(trie, parse) -> List[int]:
     return accents_by_tags[0][1]
 
 
-def _parse_value(value):
+def _parse_dictionary_value(value):
     accents_by_tags = []
     
     if b'$' not in value:
-        # single item
+        # single item, all record is accent positions
         accents = [int(b) for b in value]
         tags = []
         accents_by_tags.append((tags, accents))
 
     else:
+        # words whose accent position depends on POS and other tags
         items = value.split(b'$')
         for item in items:
             accents, _, tags = item.partition(b'^')
             accents = [int(b) for b in accents]
-            tags = tags.decode()
+            tags = decompress_tags(tags)
             accents_by_tags.append((tags, accents))
 
     return accents_by_tags
