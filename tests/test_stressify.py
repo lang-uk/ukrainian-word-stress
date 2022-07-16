@@ -15,13 +15,17 @@ def test_single_choice():
 
 def test_depends_on_tags():
     assert stressify("жодного яйця") == f"жо´дного яйця´"
-    assert stressify("золоті яйця") == f"золоті´ я´йця"
+    assert stressify("сталеві яйця") == f"стале´ві я´йця"
 
 
-def test_handle_case():
+def test_ignore_case():
     assert stressify("мама") == f"ма´ма"
     assert stressify("Мама") == f"Ма´ма"
     assert stressify("МАМА") == f"МА´МА"
+
+
+def test_preserve_whitespace_and_punctuation():
+    assert stressify(" Привіт ,  як справи ?") == " Приві´т ,  як спра´ви ?"
 
 
 

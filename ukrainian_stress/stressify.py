@@ -1,5 +1,10 @@
+import fileinput
+import os
 from enum import Enum
 from typing import List
+
+from .mutable_text import MutableText
+
 import marisa_trie
 
 
@@ -10,7 +15,10 @@ class StressSymbol:
 
 class Stressify:
 
-    def __init__(self, dict_path="./stress.v1.trie", stress_symbol=StressSymbol.AcuteAccent):
+    def __init__(self, dict_path=None, stress_symbol=StressSymbol.AcuteAccent):
+        if dict_path is None:
+            this_dir = os.path.dirname(__file__)
+            dict_path = os.path.join(this_dir, "../stress.v1.trie")
         import stanza
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
@@ -20,11 +28,14 @@ class Stressify:
 
     def __call__(self, text):
         parsed = self.nlp(text)
-        result = []
+        result = MutableText(text)
         for token in parsed.iter_tokens():
             accents = find_accent_positions(self.dict, token.to_dict()[0])
-            result.append(self.apply_accent_positions(token.text, accents))
-        return " ".join(result)  # restore original whitespace
+            accented_token = self.apply_accent_positions(token.text, accents)
+            if accented_token != token:
+                result.replace(token.start_char, token.end_char, accented_token)
+
+        return result.get_edited_text()
 
     def apply_accent_positions(self, s, positions):
         for position in sorted(positions, reverse=True):
@@ -61,6 +72,10 @@ def find_accent_positions(trie, parse) -> List[int]:
     assert len(values) == 1
     accents_by_tags = _parse_value(values[0])
 
+    if len(accents_by_tags) == 0:
+        # dictionary word with missing accents (dictionary has to be fixed)
+        return []
+
     if len(accents_by_tags) == 1:
         # this word has no other stress options, so no need 
         # to look at POS and tags
@@ -71,7 +86,7 @@ def find_accent_positions(trie, parse) -> List[int]:
     #   Number=Plur|Case=Nom|upos=NOUN
     # Parsed tags has the same format but have more irrelevant info
     # and lack `upos` which we add separately
-    feats = parse['feats'].split('|') + [f'upos={parse["upos"]}']
+    feats = parse.get('feats', '').split('|') + [f'upos={parse["upos"]}']
     for tags, accents in accents_by_tags:
         if all(tag in feats for tag in tags.split('|')):
             return accents
@@ -84,7 +99,7 @@ def find_accent_positions(trie, parse) -> List[int]:
     # Ways to improve that in the future:
     # - Return best partially matched option
     # - Sort hyperonyms by frequency and return the most frequent one
-    return accents[0]
+    return accents_by_tags[0][1]
 
 
 def _parse_value(value):
@@ -106,3 +121,7 @@ def _parse_value(value):
 
     return accents_by_tags
 
+
+if __name__ == "__main__":
+    for line in fileinput.input():
+        print(stressify(line))
