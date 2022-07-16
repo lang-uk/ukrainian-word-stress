@@ -19,12 +19,14 @@ class Stressify:
     def __init__(self, dict_path=None, stress_symbol=StressSymbol.AcuteAccent):
         if dict_path is None:
             this_dir = os.path.dirname(__file__)
-            dict_path = os.path.join(this_dir, "../stress.v1.trie")
+            dict_path = os.path.join(this_dir, "../stress.v2.trie")
         import stanza
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
         self.nlp = stanza.Pipeline(
-            'uk', 'tokenize,pos', download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES)
+            'uk',
+            processors='tokenize,pos,mwt',
+            download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES)
         self.stress_symbol = stress_symbol
 
     def __call__(self, text):
@@ -121,8 +123,3 @@ def _parse_dictionary_value(value):
             accents_by_tags.append((tags, accents))
 
     return accents_by_tags
-
-
-if __name__ == "__main__":
-    for line in fileinput.input():
-        print(stressify(line))
