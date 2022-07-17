@@ -1,6 +1,7 @@
 import pkg_resources
 import fileinput
 import os
+import logging
 from enum import Enum
 from typing import List
 
@@ -8,6 +9,9 @@ from .mutable_text import MutableText
 from .tags import decompress_tags
 
 import marisa_trie
+
+
+log = logging.getLogger(__name__)
 
 
 class StressSymbol:
@@ -26,12 +30,15 @@ class Stressify:
         self.nlp = stanza.Pipeline(
             'uk',
             processors='tokenize,pos,mwt',
-            download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES)
+            download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES,
+            logging_level=logging.getLevelName(log.getEffectiveLevel())
+        )
         self.stress_symbol = stress_symbol
 
     def __call__(self, text):
         parsed = self.nlp(text)
         result = MutableText(text)
+        log.debug("Parsed text: %s", parsed)
         for token in parsed.iter_tokens():
             accents = find_accent_positions(self.dict, token.to_dict()[0])
             accented_token = self.apply_accent_positions(token.text, accents)
@@ -70,6 +77,7 @@ def find_accent_positions(trie, parse) -> List[int]:
             break
     else:
         # non-dictionary word
+        log.debug("%s is not in the dictionary", base)
         return []
 
     assert len(values) == 1
@@ -77,17 +85,20 @@ def find_accent_positions(trie, parse) -> List[int]:
 
     if len(accents_by_tags) == 0:
         # dictionary word with missing accents (dictionary has to be fixed)
+        log.warning("The word `%s` is in dictionary, but lacks accents", base)
         return []
 
     if len(accents_by_tags) == 1:
         # this word has no other stress options, so no need 
         # to look at POS and tags
+        log.debug("`%s` has single accent, looks no further", base)
         return accents_by_tags[0][1]
 
     # Match parsed word info with dictionary entries.
     # Dictionary entries have tags compressed to single byte codes.
     # Parse tags is a superset of dictionary tags. They include more
     # irrelevant info. They also and lack `upos` which we add separately
+    log.debug("Trying to resolve ambigous entry %s", base)
     feats = parse.get('feats', '').split('|') + [f'upos={parse["upos"]}']
     for tags, accents in accents_by_tags:
         if all(tag in feats for tag in tags):
@@ -101,6 +112,7 @@ def find_accent_positions(trie, parse) -> List[int]:
     # Ways to improve that in the future:
     # - Return best partially matched option
     # - Sort hyperonyms by frequency and return the most frequent one
+    log.debug("Failed to resolve ambiguity, using a random option")
     return accents_by_tags[0][1]
 
 
