@@ -1,30 +1,30 @@
-from ukrainian_word_stress import stressify, find_accent_positions, Stressifier, OnAmbiguity
+from ukrainian_word_stress import find_accent_positions, Stressifier, OnAmbiguity
 import marisa_trie
 import pytest
 
 
 
-def test_single_syllable():
+def test_single_syllable(stressify):
     assert stressify("а") == "а"
     assert stressify("кіт") == "кіт"
 
 
-def test_single_choice():
+def test_single_choice(stressify):
     assert stressify("Україна") == "Украї´на"
 
 
-def test_depends_on_tags():
+def test_depends_on_tags(stressify):
     assert stressify("жодного яйця") == "жо´дного яйця´"
     assert stressify("сталеві яйця") == "стале´ві я´йця"
 
 
-def test_ignore_case():
+def test_ignore_case(stressify):
     assert stressify("мама") == "ма´ма"
     assert stressify("Мама") == "Ма´ма"
     assert stressify("МАМА") == "МА´МА"
 
 
-def test_preserve_whitespace_and_punctuation():
+def test_preserve_whitespace_and_punctuation(stressify):
     assert stressify(" Привіт ,  як справи ?") == " Приві´т ,  як спра´ви ?"
 
 
@@ -105,3 +105,8 @@ def trie():
     result = marisa_trie.BytesTrie()
     result.load("./ukrainian_word_stress/data/stress.trie")
     return result
+
+
+@pytest.fixture(scope='module')
+def stressify():
+    return Stressifier()
