@@ -34,10 +34,10 @@ setup(
     packages=find_packages(exclude=["docs", "tests"]),
     package_data={
         "ukrainian_stress": [
-            "stress.v2.trie",
+            "data/stress.v2.trie",
         ]
     },
-    # include_package_data=True,
+    include_package_data=True,
     install_requires=[
         "stanza",
         "marisa-trie",
