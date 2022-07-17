@@ -125,8 +125,6 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     # Parse tags is a superset of dictionary tags. They include more
     # irrelevant info. They also and lack `upos` which we add separately
     log.debug("Resolving ambigous entry %s", base)
-    if not parse.get("upos"):
-        print(base)
     feats = parse.get('feats', '').split('|') + [f'upos={parse.get("upos", "")}']
     matches = []
     for tags, accents in accents_by_tags:
