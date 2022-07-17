@@ -103,5 +103,5 @@ def test_find_accent_positions_mulitple(trie):
 @pytest.fixture(scope='module')
 def trie():
     result = marisa_trie.BytesTrie()
-    result.load("./ukrainian_word_stress/data/stress.v2.trie")
+    result.load("./ukrainian_word_stress/data/stress.trie")
     return result

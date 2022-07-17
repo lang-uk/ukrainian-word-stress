@@ -13,7 +13,7 @@ setup(
     # Versions should comply with PEP440. For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="0.0.1",
+    version="1.0.0",
     description="Find word stress for texts in Ukrainian",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -37,7 +37,7 @@ setup(
     packages=find_packages(exclude=["docs", "tests"]),
     package_data={
         "ukrainian_word_stress": [
-            "data/stress.v2.trie",
+            "data/stress.trie",
         ]
     },
     include_package_data=True,
@@ -49,7 +49,8 @@ setup(
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    extras_require={"test": ["pytest", "coverage"]},
+    extras_require={"test": ["pytest", "coverage"],
+                    "dev": ["tqdm"]},
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
