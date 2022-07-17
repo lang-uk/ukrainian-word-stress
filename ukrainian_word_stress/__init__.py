@@ -1,2 +1,1 @@
-ACCENT = '\u0301'
-from .stressify import stressify, find_accent_positions
+from .stressify import stressify, Stressifier, OnAmbiguity, StressSymbol, find_accent_positions

@@ -1,4 +1,4 @@
-from ukrainian_word_stress import stressify, find_accent_positions, ACCENT
+from ukrainian_word_stress import stressify, find_accent_positions, Stressifier, OnAmbiguity
 import marisa_trie
 import pytest
 
@@ -10,22 +10,37 @@ def test_single_syllable():
 
 
 def test_single_choice():
-    assert stressify("Україна") == f"Украї´на"
+    assert stressify("Україна") == "Украї´на"
 
 
 def test_depends_on_tags():
-    assert stressify("жодного яйця") == f"жо´дного яйця´"
-    assert stressify("сталеві яйця") == f"стале´ві я´йця"
+    assert stressify("жодного яйця") == "жо´дного яйця´"
+    assert stressify("сталеві яйця") == "стале´ві я´йця"
 
 
 def test_ignore_case():
-    assert stressify("мама") == f"ма´ма"
-    assert stressify("Мама") == f"Ма´ма"
-    assert stressify("МАМА") == f"МА´МА"
+    assert stressify("мама") == "ма´ма"
+    assert stressify("Мама") == "Ма´ма"
+    assert stressify("МАМА") == "МА´МА"
 
 
 def test_preserve_whitespace_and_punctuation():
     assert stressify(" Привіт ,  як справи ?") == " Приві´т ,  як спра´ви ?"
+
+
+def test_on_ambiguity_skip():
+    stressify = Stressifier(on_ambiguity=OnAmbiguity.Skip)
+    assert stressify("замок") == "замок"
+
+
+def test_on_ambiguity_first_option():
+    stressify = Stressifier(on_ambiguity=OnAmbiguity.First)
+    assert stressify("замок") == "за´мок"
+
+
+def test_on_ambiguity_all():
+    stressify = Stressifier(on_ambiguity=OnAmbiguity.All)
+    assert stressify("замок") == "за´мо´к"
 
 
 
