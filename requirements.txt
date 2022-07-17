@@ -1,0 +1,2 @@
+stanza==1.4.0
+marisa-trie==0.7.7

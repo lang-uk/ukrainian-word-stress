@@ -16,6 +16,7 @@ setup(
     version="0.0.1",
     description="Find word stress for texts in Ukrainian",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://github.com/lang-uk/ukrainian-word-stress",
     author='Oleksiy Syvokon',
     author_email='oleksiy.syvokon@gmail.com',
