@@ -126,11 +126,13 @@ def parse_tags(s):
 def accent_pos(s: str) -> bytes:
     indexes = []
     pos = -1
+    amend = 0
     while True:
         pos = s.find(ACCENT, pos + 1)
         if pos == -1:
             break
-        indexes.append(pos.to_bytes(1, 'little'))
+        indexes.append((pos - amend).to_bytes(1, 'little'))
+        amend += 1
     return b"".join(indexes)
 
 
