@@ -33,7 +33,7 @@ setup(
     keywords="ukrainian nlp word stress accents dictionary linguistics",
     packages=find_packages(exclude=["docs", "tests"]),
     package_data={
-        "ukrainian_stress": [
+        "ukrainian_word_stress": [
             "data/stress.v2.trie",
         ]
     },
