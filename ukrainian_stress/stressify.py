@@ -1,3 +1,4 @@
+import pkg_resources
 import fileinput
 import os
 from enum import Enum
@@ -18,8 +19,7 @@ class Stressify:
 
     def __init__(self, dict_path=None, stress_symbol=StressSymbol.AcuteAccent):
         if dict_path is None:
-            this_dir = os.path.dirname(__file__)
-            dict_path = os.path.join(this_dir, "../stress.v2.trie")
+            dict_path = pkg_resources.resource_filename('ukrainian_stress', 'data/stress.v2.trie')
         import stanza
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
