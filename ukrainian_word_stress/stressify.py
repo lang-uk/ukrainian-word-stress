@@ -3,10 +3,11 @@ import logging
 from enum import Enum
 from typing import List
 
-from .mutable_text import MutableText
-from .tags import decompress_tags
+from ukrainian_word_stress.mutable_text import MutableText
+from ukrainian_word_stress.tags import decompress_tags
 
 import marisa_trie
+import stanza
 
 
 log = logging.getLogger(__name__)
@@ -17,7 +18,6 @@ class StressSymbol:
     CombiningAcuteAccent = "\u0301"
 
 
-
 class OnAmbiguity:
     Skip = "skip"
     First = "first"
@@ -25,14 +25,37 @@ class OnAmbiguity:
 
 
 class Stressifier:
+    """Add word stress to texts in Ukrainian.
+
+    Args:
+        `stress_symbol`: Which symbol to use as an accent mark.
+            Default is `StressSymbol.AcuteAccent` (я´йця)
+            Alternative is `StressSymbol.CombiningAcuteAccent` (я́йця).
+                This symbol is commonly used in print. However, not all
+                platforms render it correctly (Windows, for one).
+            Custom characters are also accepted.
+
+        `on_ambiguity`: What to do if word ambiguity cannot be resolved.
+            - `OnAmbiguity.Skip` (default): do not place stress
+            - `OnAmbiguity.First`: place a stress of the first match with a
+                high chance of being incorrect.
+            - `OnAmbiguity.All`: return all possible options at once.
+                This will look as multiple stress symbols in one word
+                (за´мо´к)
+
+    Example:
+        >>> f = Stressifier()
+        >>> f("Привіт, як справи?")
+        'Приві´т, як спра´ви?'
+    """
+
+
 
     def __init__(self,
-                 dict_path=None,
                  stress_symbol=StressSymbol.AcuteAccent,
                  on_ambiguity=OnAmbiguity.Skip):
-        if dict_path is None:
-            dict_path = pkg_resources.resource_filename('ukrainian_word_stress', 'data/stress.v2.trie')
-        import stanza
+
+        dict_path = pkg_resources.resource_filename('ukrainian_word_stress', 'data/stress.v2.trie')
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
         self.nlp = stanza.Pipeline(
@@ -63,6 +86,16 @@ class Stressifier:
 
 
 def stressify(text: str) -> str:
+    """Add word stress to texts in Ukrainian.
+
+    This is a functional interface to `Stressifier`.
+
+    Example::
+        >>> stressify("Привіт, як справи?")
+        'Приві´т, як спра´ви?'
+
+    """
+
     if not hasattr(stressify, "f"):
         stressify.f = Stressifier()
     return stressify.f(text)
@@ -153,7 +186,6 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
 
     else:
         raise ValueError(f"Unknown on_ambiguity value: {on_ambiguity}")
-
 
 
 def _parse_dictionary_value(value):
