@@ -42,7 +42,7 @@ $ echo 'Золоті яйця, але нема ні яйця' | ukrainian-word-s
 
 ## Setup
 
-```
+```bash
 $ pip install ukrainian-word-stress
 ```
 
@@ -99,12 +99,29 @@ Note, that some platforms (Windows, for example) render it incorrectly.
 
 You can also pass custom characters in place of these two:
 
-```
+```bash
 $ echo 'олені небриті і не голені.' | ukrainian-word-stress --symbol +
 о+лені небри+ті і не го+лені.
 
 $ echo 'олені небриті і не голені.' | ukrainian-word-stress --symbol combining
 о́лені небри́ті і не го́лені.
+```
+
+
+## Debugging and reporting issues
+
+Use the `--verbose` switch to get info useful for debugging.
+
+If you believe that you found a bug, please open a [Github issue](https://github.com/lang-uk/ukrainian-word-stress/issues)
+
+But first, make sure that the bug is not related to heteronyms disambiguation.
+For example, if you see that some word lacks accent, add the `--on-ambiguity=all`
+switch to see if this was a heteronym. If the word of question has
+multiple accents, that's a heteronym, not a bug:
+
+```bash
+$ echo замок | ukrainian-word-stress --on-ambiguity=all
+за´мо´к
 ```
 
 
