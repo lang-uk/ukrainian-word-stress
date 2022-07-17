@@ -15,8 +15,9 @@ for language learners.
 ### From Python
 
 ```python
->>> from ukrainian_word_stress import stressify
+>>> from ukrainian_word_stress import Stressifier
 >>> text = """Потяг зупинився, ми зійшли на платформу. Було тихо, широкі навскісні промені золотили повітря, заважаючи бачити речі такими, якими вони були. Третя по обіді. Жодноі живоі душі. Найкращий час для урочистих відвідин померлих. Взяли в привокзальному торбу вина, рушили вздовж колій, піщаною стежкою."""
+>>> stressify = Stressifier()
 >>> stressify(text)
 
 'Потяг зупини´вся, ми зійшли´ на платфо´рму. Було´ ти´хо, широ´кі навскі´сні
@@ -27,13 +28,13 @@ for language learners.
 
 ```
 
-Alternatively, use `ukrainian_word_stress.Stressifier` class to get more
-fine-graded configuration (see below). For example:
+The `ukrainian_word_stress.Stressifier` class has optional arguments for
+fine-graded configuration (see sections below). For example:
 
 ```python
 >>> from ukrainian_word_stress import Stressifier, StressSymbol
->>> fn = Stressifier(stress_symbol=StressSymbol.CombiningAcuteAccent)
->>> fn(text)
+>>> stressify = Stressifier(stress_symbol=StressSymbol.CombiningAcuteAccent)
+>>> stressify(text)
 
 'Потяг зупини́вся, ми зійшли́ на платфо́рму. Було́ ти́хо, широ́кі навскі́сні про́мені
 золоти́ли пові́тря, заважа́ючи ба́чити ре́чі таки́ми, яки́ми вони́ були́. Тре́тя по

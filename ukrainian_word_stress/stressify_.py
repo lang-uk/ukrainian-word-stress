@@ -44,8 +44,8 @@ class Stressifier:
                 (за´мо´к)
 
     Example:
-        >>> f = Stressifier()
-        >>> f("Привіт, як справи?")
+        >>> stressify = Stressifier()
+        >>> stressify("Привіт, як справи?")
         'Приві´т, як спра´ви?'
     """
 
@@ -73,32 +73,16 @@ class Stressifier:
         log.debug("Parsed text: %s", parsed)
         for token in parsed.iter_tokens():
             accents = find_accent_positions(self.dict, token.to_dict()[0], self.on_ambiguity)
-            accented_token = self.apply_accent_positions(token.text, accents)
+            accented_token = self._apply_accent_positions(token.text, accents)
             if accented_token != token:
                 result.replace(token.start_char, token.end_char, accented_token)
 
         return result.get_edited_text()
 
-    def apply_accent_positions(self, s, positions):
+    def _apply_accent_positions(self, s, positions):
         for position in sorted(positions, reverse=True):
             s = s[:position] + self.stress_symbol + s[position:]
         return s
-
-
-def stressify(text: str) -> str:
-    """Add word stress to texts in Ukrainian.
-
-    This is a functional interface to `Stressifier`.
-
-    Example::
-        >>> stressify("Привіт, як справи?")
-        'Приві´т, як спра´ви?'
-
-    """
-
-    if not hasattr(stressify, "f"):
-        stressify.f = Stressifier()
-    return stressify.f(text)
 
 
 def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[int]:
