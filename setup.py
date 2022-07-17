@@ -17,6 +17,8 @@ setup(
     description="Find word stress for texts in Ukrainian",
     long_description=long_description,
     url="https://github.com/lang-uk/ukrainian-word-stress",
+    author='Oleksiy Syvokon',
+    author_email='oleksiy.syvokon@gmail.com',
     license="MIT",
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
