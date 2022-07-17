@@ -1,6 +1,4 @@
 import pkg_resources
-import fileinput
-import os
 import logging
 from enum import Enum
 from typing import List
@@ -19,9 +17,19 @@ class StressSymbol:
     CombiningAcuteAccent = "\u0301"
 
 
-class Stressify:
 
-    def __init__(self, dict_path=None, stress_symbol=StressSymbol.AcuteAccent):
+class OnAmbiguity:
+    Skip = "skip"
+    First = "first"
+    All = "all"
+
+
+class Stressifier:
+
+    def __init__(self,
+                 dict_path=None,
+                 stress_symbol=StressSymbol.AcuteAccent,
+                 on_ambiguity=OnAmbiguity.Skip):
         if dict_path is None:
             dict_path = pkg_resources.resource_filename('ukrainian_word_stress', 'data/stress.v2.trie')
         import stanza
@@ -34,13 +42,14 @@ class Stressify:
             logging_level=logging.getLevelName(log.getEffectiveLevel())
         )
         self.stress_symbol = stress_symbol
+        self.on_ambiguity = on_ambiguity
 
     def __call__(self, text):
         parsed = self.nlp(text)
         result = MutableText(text)
         log.debug("Parsed text: %s", parsed)
         for token in parsed.iter_tokens():
-            accents = find_accent_positions(self.dict, token.to_dict()[0])
+            accents = find_accent_positions(self.dict, token.to_dict()[0], self.on_ambiguity)
             accented_token = self.apply_accent_positions(token.text, accents)
             if accented_token != token:
                 result.replace(token.start_char, token.end_char, accented_token)
@@ -55,11 +64,11 @@ class Stressify:
 
 def stressify(text: str) -> str:
     if not hasattr(stressify, "f"):
-        stressify.f = Stressify()
+        stressify.f = Stressifier()
     return stressify.f(text)
 
 
-def find_accent_positions(trie, parse) -> List[int]:
+def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[int]:
     """Return best accent guess for the given token parsed tags.
 
     Returns:
@@ -98,22 +107,53 @@ def find_accent_positions(trie, parse) -> List[int]:
     # Dictionary entries have tags compressed to single byte codes.
     # Parse tags is a superset of dictionary tags. They include more
     # irrelevant info. They also and lack `upos` which we add separately
-    log.debug("Trying to resolve ambigous entry %s", base)
+    log.debug("Resolving ambigous entry %s", base)
     feats = parse.get('feats', '').split('|') + [f'upos={parse["upos"]}']
+    matches = []
     for tags, accents in accents_by_tags:
         if all(tag in feats for tag in tags):
-            return accents
+            matches.append((tags, accents))
+            log.debug("Found match for %s: %s", base, tags)
+
+    if len(matches) == 1:
+        log.debug("Ambiguity resolved to a single option: %s", matches)
+        accents = matches[0][1]
+        return accents
+
+    if not matches:
+        # Nothing matched the parse, consider all dictionary options
+        matches = accents_by_tags
+
+    log.info(matches)
+    log.info(on_ambiguity)
 
     # If we reach here:
-    # - the word have multiple stress options
-    # - none of them matched the dictionary
-    # At this point, the best we can do is to disregard parse
-    # and return a randomly chosen accent option.
+    # - the word have multiple stress options and none of them matched the dictionary
+    # - OR the word is hyperonym (го'род/горо'д)
+    # There's no ideal action, so follow a configured strategy
     # Ways to improve that in the future:
     # - Return best partially matched option
     # - Sort hyperonyms by frequency and return the most frequent one
-    log.debug("Failed to resolve ambiguity, using a random option")
-    return accents_by_tags[0][1]
+    # - Integrate a proper word sense disambiguation model
+    if on_ambiguity == OnAmbiguity.First:
+        # Disregard parse and return the first match (essentially random option)
+        log.debug("Failed to resolve ambiguity, using a random option")
+        return matches[0][1]
+
+    elif on_ambiguity == OnAmbiguity.Skip:
+        # Pretend the word is not dictionary
+        return []
+
+    elif on_ambiguity == OnAmbiguity.All:
+        # Combine all possible accent positions 
+        all_accents = set()
+        for tags, accents in matches:
+            all_accents |= set(accents)
+        return sorted(all_accents)
+
+    else:
+        raise ValueError(f"Unknown on_ambiguity value: {on_ambiguity}")
+
 
 
 def _parse_dictionary_value(value):
@@ -129,9 +169,10 @@ def _parse_dictionary_value(value):
         # words whose accent position depends on POS and other tags
         items = value.split(b'$')
         for item in items:
-            accents, _, tags = item.partition(b'^')
-            accents = [int(b) for b in accents]
-            tags = decompress_tags(tags)
-            accents_by_tags.append((tags, accents))
+            if item:
+                accents, _, tags = item.partition(b'^')
+                accents = [int(b) for b in accents]
+                tags = decompress_tags(tags)
+                accents_by_tags.append((tags, accents))
 
     return accents_by_tags
