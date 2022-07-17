@@ -1,12 +1,18 @@
 import marisa_trie
 import csv
+import sys
 import collections
+import logging
 import tqdm
 
 from ukrainian_word_stress.tags import compress_tags
 
 
+log = logging.getLogger(__name__)
+
+
 ACCENT = '\u0301'
+VOWELS = "уеіїаояиюєУЕІАОЯИЮЄЇ"
 
 def compile(csv_path: str) -> marisa_trie.BytesTrie:
     trie = []
@@ -27,13 +33,21 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
 
 def _parse_dictionary(csv_path):
     by_basic = collections.defaultdict(list)  # TODO: change to set
+    skipped = 0
     for row in tqdm.tqdm(csv.DictReader(open(csv_path))):
         form = row['form']
+        if not validate_stress(form):
+            log.debug("Skipping bad item: %s", form)
+            skipped += 1
+            continue
+
         basic = strip_accent(form)
         pos = parse_pos(row['type'])
         tags = parse_tags(row['tag'])
         tags.append(f'upos={pos}')
         by_basic[basic].append((form, tags))
+
+    print(f"Skipped {skipped} bad word forms", file=sys.stderr)
     return by_basic
 
 
@@ -71,6 +85,13 @@ def parse_pos(s: str) -> str:
 
 
 def parse_tags(s):
+    """Parse dictionary tags into a list of standard tags.
+
+    Example::
+        >>> parse_tags( "однина місцевий")
+        ['Number=Sing', 'Case=Loc']
+    """
+
     mapping = {
         "однина": "Number=Sing",
         "множина": "Number=Plur",
@@ -111,6 +132,31 @@ def accent_pos(s: str) -> bytes:
             break
         indexes.append(pos.to_bytes(1, 'little'))
     return b"".join(indexes)
+
+
+
+def count_vowels(s):
+    result = 0
+    for x in VOWELS:
+        result += s.count(x)
+    return result
+
+
+def validate_stress(word):
+    good = True
+
+    if count_vowels(word) < 2:
+        return good
+
+    pos = word.find(ACCENT)
+    if pos <= 0:
+        return not good
+
+    elif word[pos - 1] not in VOWELS:
+        return not good
+
+    return good
+
 
 
 if __name__ == "__main__":
