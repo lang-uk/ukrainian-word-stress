@@ -1,6 +1,7 @@
 from typing import List
 
 
+# Maps known tags to a single byte code
 TAGS = {
     "upos=NOUN": b'\x01',
     "upos=ADJ": b'\x02',
@@ -37,6 +38,7 @@ TAGS = {
 }
 
 
+# Maps single byte code to a string tag
 TAG_BY_BYTE = {value: key for key, value in TAGS.items()}
 
 

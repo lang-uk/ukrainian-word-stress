@@ -1,5 +1,5 @@
 import fileinput
-from ukrainian_stress import stressify
+from ukrainian_word_stress import stressify
 
 
 def main():

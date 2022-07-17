@@ -3,7 +3,7 @@ import csv
 import collections
 import tqdm
 
-from ukrainian_stress.tags import compress_tags
+from ukrainian_word_stress.tags import compress_tags
 
 
 ACCENT = '\u0301'

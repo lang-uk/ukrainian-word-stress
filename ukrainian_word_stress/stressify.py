@@ -19,7 +19,7 @@ class Stressify:
 
     def __init__(self, dict_path=None, stress_symbol=StressSymbol.AcuteAccent):
         if dict_path is None:
-            dict_path = pkg_resources.resource_filename('ukrainian_stress', 'data/stress.v2.trie')
+            dict_path = pkg_resources.resource_filename('ukrainian_word_stress', 'data/stress.v2.trie')
         import stanza
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
