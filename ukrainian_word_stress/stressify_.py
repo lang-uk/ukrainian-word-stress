@@ -55,7 +55,7 @@ class Stressifier:
                  stress_symbol=StressSymbol.AcuteAccent,
                  on_ambiguity=OnAmbiguity.Skip):
 
-        dict_path = pkg_resources.resource_filename('ukrainian_word_stress', 'data/stress.v2.trie')
+        dict_path = pkg_resources.resource_filename('ukrainian_word_stress', 'data/stress.trie')
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
         self.nlp = stanza.Pipeline(
@@ -158,9 +158,6 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     if not matches:
         # Nothing matched the parse, consider all dictionary options
         matches = accents_by_tags
-
-    log.info(matches)
-    log.info(on_ambiguity)
 
     # If we reach here:
     # - the word have multiple stress options and none of them matched the dictionary

@@ -37,7 +37,6 @@ def _parse_dictionary(csv_path):
     for row in tqdm.tqdm(csv.DictReader(open(csv_path))):
         form = row['form']
         if not validate_stress(form):
-            log.debug("Skipping bad item: %s", form)
             skipped += 1
             continue
 
@@ -136,12 +135,8 @@ def accent_pos(s: str) -> bytes:
     return b"".join(indexes)
 
 
-
 def count_vowels(s):
-    result = 0
-    for x in VOWELS:
-        result += s.count(x)
-    return result
+    return sum(s.count(x) for x in VOWELS)
 
 
 def validate_stress(word):
