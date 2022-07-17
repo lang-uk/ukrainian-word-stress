@@ -9,6 +9,7 @@ def main():
         description="Add stress mark to texts in Ukrainian"
     )
     parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("--version", action="store_true")
     parser.add_argument("--on-ambiguity", choices=["skip", "first", "all"], default='skip')
     parser.add_argument(
         "--symbol",
@@ -20,6 +21,10 @@ def main():
         "path", nargs="*", help="File(s) to process. If not set, read from stdin"
     )
     args = parser.parse_args()
+
+    if args.version:
+        print("ukrainian-word-stress 0.0.1")
+        return
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARNING)
 
