@@ -118,6 +118,20 @@ $ echo 'олені небриті і не голені.' | ukrainian-word-stress
 ```
 
 
+## Variative stress
+
+Some words allow for multiple stress positions. For example,
+по́милка and поми́лка are both acceptable. For such words we return
+double stress:
+
+```
+$ echo помилка | ukrainian-word-stress
+по´ми´лка
+```
+
+
+
+
 ## Debugging and reporting issues
 
 Use the `--verbose` switch to get info useful for debugging.
