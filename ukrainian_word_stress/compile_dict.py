@@ -26,7 +26,9 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
             value = b''
             for form, tags in forms:
                 pos = accent_pos(form)
-                value += pos + b'^' + compress_tags(tags) + b'$'
+                compressed = pos + b'^' + compress_tags(tags) + b'$'
+                if compressed not in value:
+                    value += compressed
         trie.append((basic, value))
     return marisa_trie.BytesTrie(trie)
 
@@ -66,7 +68,7 @@ def parse_pos(s: str) -> str:
         "прислівник": "upos=ADV",
         "абревіатура": "upos=NOUN",
         "прийменник": "upos=ADP",
-        "числівник": "UPOS=NUM",
+        "числівник": "upos=NUM",
 
         "сполука": "upos=CCONJ",
         "присудкове слово": "upos=ПРИСУДКОВЕ СЛОВО",
