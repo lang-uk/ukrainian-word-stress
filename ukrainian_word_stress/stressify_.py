@@ -130,7 +130,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     for tags, accents in accents_by_tags:
         if all(tag in feats for tag in tags):
             matches.append((tags, accents))
-            log.debug("Found match for %s: %s", base, tags)
+            log.debug("Found match for %s: %s (accent=%s)", base, tags, accents)
 
     if len(matches) == 1:
         log.debug("Ambiguity resolved to a single option: %s", matches)

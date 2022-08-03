@@ -41,9 +41,7 @@ def _parse_dictionary(csv_path):
             continue
 
         basic = strip_accent(form)
-        pos = parse_pos(row['type'])
-        tags = parse_tags(row['tag'])
-        tags.append(f'upos={pos}')
+        tags = parse_tags(row['tag']) + parse_pos(row['type'])
         by_basic[basic].append((form, tags))
 
     print(f"Skipped {skipped} bad word forms", file=sys.stderr)
@@ -56,31 +54,48 @@ def strip_accent(s: str) -> str:
 
 def parse_pos(s: str) -> str:
     mapping = {
-        'іменник': "NOUN",
-        'прикметник' : "ADJ",
-        'вигук' : "INTJ",
-        "сполучник": "CCONJ",
-        "частка": "PART",
-        "займенник": "PRON",
-        "дієслово": "VERB",
-        "прізвище": "PROPN",
-        "власна назва": "PROPN",
-        "прислівник": "ADV",
-        "абревіатура": "NOUN",
+        'іменник': "upos=NOUN",
+        'прикметник' : "upos=ADJ",
+        'вигук' : "upos=INTJ",
+        "сполучник": "upos=CCONJ",
+        "частка": "upos=PART",
+        "займенник": "upos=PRON",
+        "дієслово": "upos=VERB",
+        "прізвище": "upos=PROPN",
+        "власна назва": "upos=PROPN",
+        "прислівник": "upos=ADV",
+        "абревіатура": "upos=NOUN",
+        "прийменник": "upos=ADP",
+        "числівник": "UPOS=NUM",
 
-        "сполука": "СПОЛУКА",
-        "присудкове слово": "ПРИСУДКОВЕ СЛОВО",
+        "сполука": "upos=CCONJ",
+        "присудкове слово": "upos=ПРИСУДКОВЕ СЛОВО",
 
-        "числівник кількісний": "NumType=Card",
 
-        "": "<None>",
+        "UNK": "",
     }
 
+    tags = []
     for ukr, tag in mapping.items():
-        if ukr in s:
-            return tag
+        if ukr in s and tag:
+            tags.append(tag)
 
-    raise ValueError(f"Can't parse POS string: {s}")
+    gender = None
+    if "чоловічого або жіночого роду" in s:
+        gender = None
+    elif "чоловічого" in s:
+        gender = 'Masc'
+    elif "жіночого" in s:
+        gender = 'Fem'
+    elif "середнього" in s:
+        gender = 'Neut'
+    if gender:
+        tags.append(f'Gender={gender}')
+
+    if not tags:
+        log.warning(f"Can't parse POS string: {s}")
+
+    return tags
 
 
 def parse_tags(s):
