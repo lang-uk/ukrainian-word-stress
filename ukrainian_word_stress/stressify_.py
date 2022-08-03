@@ -132,12 +132,14 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
             matches.append((tags, accents))
             log.debug("Found match for %s: %s (accent=%s)", base, tags, accents)
 
-    if len(matches) == 1:
+    unique_accents = len({repr(accents) for _, accents in matches})
+
+    if unique_accents == 1:
         log.debug("Ambiguity resolved to a single option: %s", matches)
         accents = matches[0][1]
         return accents
 
-    if not matches:
+    if unique_accents == 0:
         # Nothing matched the parse, consider all dictionary options
         matches = accents_by_tags
 

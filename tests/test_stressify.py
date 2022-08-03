@@ -43,6 +43,14 @@ def test_on_ambiguity_all():
     assert stressify("замок") == "за´мо´к"
 
 
+def test_no_ambiguity_multiple_meanings():
+    # Word "голови" may have different meanings and tags.
+    # However, they all share the same stress positions, so
+    # that's not an ambiguity for our purpuses
+    stressify = Stressifier(on_ambiguity=OnAmbiguity.Skip)
+    assert stressify("рух голови") == "рух голови´"
+
+
 
 def test_find_accent_positions_single(trie):
     parse = {

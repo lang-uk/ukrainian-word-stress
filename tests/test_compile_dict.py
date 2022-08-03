@@ -6,6 +6,5 @@ def test_parse_tags():
     assert parse_tags(defn) == ['Number=Sing', 'Case=Loc']
 
 
-
 def test_accent_pos():
     assert accent_pos("по́ми́лка") == b'\x02\x04'
