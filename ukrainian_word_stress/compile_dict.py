@@ -26,7 +26,7 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
             value = b''
             for form, tags in forms:
                 pos = accent_pos(form)
-                compressed = pos + b'^' + compress_tags(tags) + b'$'
+                compressed = pos + b'\t' + compress_tags(tags) + b'\n'
                 if compressed not in value:
                     value += compressed
         trie.append((basic, value))

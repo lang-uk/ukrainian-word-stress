@@ -174,7 +174,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
 def _parse_dictionary_value(value):
     accents_by_tags = []
     
-    if b'$' not in value:
+    if b'\n' not in value:
         # single item, all record is accent positions
         accents = [int(b) for b in value]
         tags = []
@@ -182,10 +182,10 @@ def _parse_dictionary_value(value):
 
     else:
         # words whose accent position depends on POS and other tags
-        items = value.split(b'$')
+        items = value.split(b'\n')
         for item in items:
             if item:
-                accents, _, tags = item.partition(b'^')
+                accents, _, tags = item.partition(b'\t')
                 accents = [int(b) for b in accents]
                 tags = decompress_tags(tags)
                 accents_by_tags.append((tags, accents))

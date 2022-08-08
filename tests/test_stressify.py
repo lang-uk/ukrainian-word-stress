@@ -51,6 +51,11 @@ def test_no_ambiguity_multiple_meanings():
     assert stressify("рух голови") == "рух голови´"
 
 
+def test_regression_splitter():
+    # This is a regression test.
+    stressify = Stressifier(on_ambiguity=OnAmbiguity.All)
+    assert stressify("веселим") == "весе´лим"
+
 
 def test_find_accent_positions_single(trie):
     parse = {
