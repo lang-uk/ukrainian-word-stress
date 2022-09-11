@@ -1,3 +1,61 @@
+#!/usr/bin/env python3
+"""This script prepares a corpus of ambiguous words for manual stress correction.
+
+The script reads a corpus of sentences from stdin and outputs a JSON file with
+a list of ambiguous words and their possible stress patterns.
+
+The script uses the stress-full.trie dictionary, which is a trie of all
+possible stress patterns for all words in the Ukrainian dictionary.
+
+Note, that we consider ambigous words only those that have more than one
+possible stress pattern.
+
+The script outputs a JSON-lines file with the following structure:
+
+	{
+	  "sentence": "Високий замок стояв на горі.",
+	  "ambiguities": [
+		{
+		  "word": "замок",
+		  "matches": [
+			{
+			  "comment": "будівля",
+			  "tags": [
+				"Number=Sing",
+				"Case=Nom",
+				"upos=NOUN",
+				"Gender=Masc"
+			  ],
+			  "stress": [ 2 ]
+			},
+			{
+			  "comment": "пристрій для замикання тощо",
+			  "tags": [
+				"Number=Sing",
+				"Case=Nom",
+				"upos=NOUN",
+				"Gender=Masc"
+			  ],
+			  "stress": [ 4 ]
+			}
+		  ],
+		  "parse": {
+			"id": 2,
+			"text": "замок",
+			"upos": "NOUN",
+			"xpos": "Ncmsnn",
+			"feats": "Animacy=Inan|Case=Nom|Gender=Masc|Number=Sing",
+			"start_char": 8,
+			"end_char": 13
+		  }
+		}
+	  ]
+	}
+
+"""
+
+
+
 import json
 import ukrainian_word_stress.stressify_
 import marisa_trie
@@ -10,6 +68,10 @@ def decompress_tags(tags):
 
 
 def on_ambiguity(matches, parse):
+    unique_accents = len({repr(accents) for _, accents in matches})
+    if unique_accents < 2:
+        return matches[0][1]
+
     matches_for_report = []
     for tags, stress in matches:
         comment = [t for t in tags if t.startswith("comment=")][0].removeprefix(

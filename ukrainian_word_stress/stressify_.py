@@ -149,7 +149,10 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
         return accents
 
     if unique_accents == 0:
-        log.debug("Nothing matched the parse, consider all dictionary options")
+        log.debug("Nothing matched the parse, consider all dictionary options.")
+        log.debug("Tags from parse: %s", feats)
+        log.debug("Tags from dictionary: \n * %s",
+                "\n * ".join(repr(tags) for tags, _ in accents_by_tags))
         matches = accents_by_tags
 
     # If we reach here:
@@ -214,7 +217,7 @@ def _get_tags_from_parse(parse):
         # Dictionary makes no distinction between proper and common nouns
         upos = "NOUN"
 
-    feats = parse["feats"].split("|")
+    feats = parse.get("feats", "").split("|")
     feats.append(f"upos={upos}")
 
     return feats
