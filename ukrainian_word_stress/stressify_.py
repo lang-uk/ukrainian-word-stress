@@ -98,17 +98,24 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     """
 
     base = parse["text"]
+    values = []
     for word in (base, base.lower(), base.title()):
         if word in trie:
-            values = trie[word]
+            values += trie[word]
+            # for the first word in the sentence, try lowercased.
+            # for the rest, exit early.
+            if parse["id"] == 1 and base[0].isupper():
+                continue
             break
-    else:
+
+    if not values:
         # non-dictionary word
         log.debug("%s is not in the dictionary", base)
         return []
 
-    assert len(values) == 1
-    accents_by_tags = _parse_dictionary_value(values[0])
+    accents_by_tags = []
+    for vs in values:
+        accents_by_tags += _parse_dictionary_value(vs)
 
     if len(accents_by_tags) == 0:
         # dictionary word with missing accents (dictionary has to be fixed)
