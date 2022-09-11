@@ -126,7 +126,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     # Parse tags is a superset of dictionary tags. They include more
     # irrelevant info. They also and lack `upos` which we add separately
     log.debug("Resolving ambigous entry %s", base)
-    feats = parse.get('feats', '').split('|') + [f'upos={parse.get("upos", "")}']
+    feats = _get_tags_from_parse(parse)
     matches = []
     for tags, accents in accents_by_tags:
         if all(tag in feats for tag in tags):
@@ -141,7 +141,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
         return accents
 
     if unique_accents == 0:
-        # Nothing matched the parse, consider all dictionary options
+        log.debug("Nothing matched the parse, consider all dictionary options")
         matches = accents_by_tags
 
     # If we reach here:
@@ -152,6 +152,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     # - Return best partially matched option
     # - Sort hyperonyms by frequency and return the most frequent one
     # - Integrate a proper word sense disambiguation model
+    log.debug("Using %s strategy for %s", on_ambiguity, base)
     if on_ambiguity == OnAmbiguity.First:
         # Disregard parse and return the first match (essentially random option)
         log.debug("Failed to resolve ambiguity, using a random option")
@@ -183,12 +184,26 @@ def _parse_dictionary_value(value):
 
     else:
         # words whose accent position depends on POS and other tags
-        items = value.split(b'\n')
+        items = value.split(b"\n")
         for item in items:
             if item:
-                accents, _, tags = item.partition(b'\t')
+                accents, _, tags = item.partition(b"\t")
                 accents = [int(b) for b in accents]
                 tags = decompress_tags(tags)
                 accents_by_tags.append((tags, accents))
 
     return accents_by_tags
+
+
+def _get_tags_from_parse(parse):
+    """Take a Stanza parse and return a list of tags to match."""
+
+    upos = parse.get("upos")
+    if upos == "PROPN":
+        # Dictionary makes no distinction between proper and common nouns
+        upos = "NOUN"
+
+    feats = parse["feats"].split("|")
+    feats.append(f"upos={upos}")
+
+    return feats
