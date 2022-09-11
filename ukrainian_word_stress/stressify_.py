@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List
 
 from ukrainian_word_stress.mutable_text import MutableText
-from ukrainian_word_stress.tags import decompress_tags
+from ukrainian_word_stress.tags import decompress_tags, TAGS
 
 import marisa_trie
 import stanza
@@ -49,8 +49,6 @@ class Stressifier:
         'Приві´т, як спра´ви?'
     """
 
-
-
     def __init__(self,
                  stress_symbol=StressSymbol.AcuteAccent,
                  on_ambiguity=OnAmbiguity.Skip):
@@ -60,10 +58,10 @@ class Stressifier:
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
         self.nlp = stanza.Pipeline(
-            'uk',
-            processors='tokenize,pos,mwt',
+            "uk",
+            processors="tokenize,pos,mwt",
             download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES,
-            logging_level=logging.getLevelName(log.getEffectiveLevel())
+            logging_level=logging.getLevelName(log.getEffectiveLevel()),
         )
         self.stress_symbol = stress_symbol
         self.on_ambiguity = on_ambiguity
@@ -73,7 +71,9 @@ class Stressifier:
         result = MutableText(text)
         log.debug("Parsed text: %s", parsed)
         for token in parsed.iter_tokens():
-            accents = find_accent_positions(self.dict, token.to_dict()[0], self.on_ambiguity)
+            accents = find_accent_positions(
+                self.dict, token.to_dict()[0], self.on_ambiguity
+            )
             accented_token = self._apply_accent_positions(token.text, accents)
             if accented_token != token:
                 result.replace(token.start_char, token.end_char, accented_token)
@@ -97,7 +97,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
           multiple valid accents.
     """
 
-    base = parse['text']
+    base = parse["text"]
     for word in (base, base.lower(), base.title()):
         if word in trie:
             values = trie[word]
@@ -116,7 +116,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
         return []
 
     if len(accents_by_tags) == 1:
-        # this word has no other stress options, so no need 
+        # this word has no other stress options, so no need
         # to look at POS and tags
         log.debug("`%s` has single accent, looks no further", base)
         return accents_by_tags[0][1]
@@ -129,7 +129,8 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     feats = _get_tags_from_parse(parse)
     matches = []
     for tags, accents in accents_by_tags:
-        if all(tag in feats for tag in tags):
+        tags_to_match = [f for f in tags if f in TAGS and f]
+        if all(tag in feats for tag in tags_to_match):
             matches.append((tags, accents))
             log.debug("Found match for %s: %s (accent=%s)", base, tags, accents)
 
@@ -163,11 +164,14 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
         return []
 
     elif on_ambiguity == OnAmbiguity.All:
-        # Combine all possible accent positions 
+        # Combine all possible accent positions
         all_accents = set()
         for tags, accents in matches:
             all_accents |= set(accents)
         return sorted(all_accents)
+
+    elif callable(on_ambiguity):
+        return on_ambiguity(matches, parse)
 
     else:
         raise ValueError(f"Unknown on_ambiguity value: {on_ambiguity}")
@@ -175,8 +179,8 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
 
 def _parse_dictionary_value(value):
     accents_by_tags = []
-    
-    if b'\n' not in value:
+
+    if b"\n" not in value:
         # single item, all record is accent positions
         accents = [int(b) for b in value]
         tags = []
