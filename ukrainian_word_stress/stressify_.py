@@ -36,7 +36,7 @@ class Stressifier:
             Custom characters are also accepted.
 
         `on_ambiguity`: What to do if word ambiguity cannot be resolved.
-            - `OnAmbiguity.Skip` (default): do not place stress
+            - `OnAmbiguity.Skip` (default): do not place stress on the word.
             - `OnAmbiguity.First`: place a stress of the first match with a
                 high chance of being incorrect.
             - `OnAmbiguity.All`: return all possible options at once.
@@ -134,13 +134,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
     # irrelevant info. They also and lack `upos` which we add separately
     log.debug("Resolving ambigous entry %s", base)
     feats = _get_tags_from_parse(parse)
-    matches = []
-    for tags, accents in accents_by_tags:
-        tags_to_match = [f for f in tags if f in TAGS and f]
-        if all(tag in feats for tag in tags_to_match):
-            matches.append((tags, accents))
-            log.debug("Found match for %s: %s (accent=%s)", base, tags, accents)
-
+    matches = _match_parse_to_dictionary(feats, accents_by_tags)
     unique_accents = len({repr(accents) for _, accents in matches})
 
     if unique_accents == 1:
@@ -156,14 +150,15 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
         matches = accents_by_tags
 
     # If we reach here:
-    # - the word have multiple stress options and none of them matched the dictionary
+    # - the word have multiple stress options and none of them matched the parse
     # - OR the word is hyperonym (го'род/горо'д)
     # There's no ideal action, so follow a configured strategy
     # Ways to improve that in the future:
-    # - Return best partially matched option
-    # - Sort hyperonyms by frequency and return the most frequent one
-    # - Integrate a proper word sense disambiguation model
+    # - [x] Return best partially matched option
+    # - [ ] Sort hyperonyms by frequency and return the most frequent one
+    # - [ ] Integrate a proper word sense disambiguation model
     log.debug("Using %s strategy for %s", on_ambiguity, base)
+
     if on_ambiguity == OnAmbiguity.First:
         # Disregard parse and return the first match (essentially random option)
         log.debug("Failed to resolve ambiguity, using a random option")
@@ -221,3 +216,33 @@ def _get_tags_from_parse(parse):
     feats.append(f"upos={upos}")
 
     return feats
+
+
+def _match_parse_to_dictionary(feats, accents_by_tags, penalty_tolerance=1):
+    """Return a list of matching dictionary entries, allowing for some penalty.
+    Penalty is the number of tags that does not match.
+
+    Returns:
+        A list of (tags, accents) tuples: the best matches.
+
+    """
+
+    # Count how many tags match for each dictionary entry.
+    # Each tag that does not match is penalized by 1.
+    match_penalty = []  # (penalty, match)
+    for tags, accents in accents_by_tags:
+        tags_to_match = [f for f in tags if f in TAGS and f]
+        penalty = len([f for f in tags_to_match if f not in feats])
+        match_penalty.append((penalty, (tags, accents)))
+        log.debug("   penalty: %s, match: %s", penalty, (tags, accents))
+
+    # Take the best matches withing the penalty tolerance.
+    match_penalty.sort()
+    best_penalty = match_penalty[0][0]
+    log.debug("Best penalty: %s", best_penalty)
+    if best_penalty > penalty_tolerance:
+        matches = []
+    else:
+        matches = [m for penalty, m in match_penalty if penalty == best_penalty]
+
+    return matches
