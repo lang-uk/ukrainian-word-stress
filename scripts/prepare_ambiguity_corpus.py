@@ -74,9 +74,11 @@ def on_ambiguity(matches, parse):
 
     matches_for_report = []
     for tags, stress in matches:
-        comment = [t for t in tags if t.startswith("comment=")][0].removeprefix(
-            "comment="
-        )
+        comment = [t for t in tags if t.startswith("comment=")]
+        if comment:
+            comment = comment[0].removeprefix("comment=")
+        else:
+            comment = ""
         excluded_tags = ("full=", "comment=")
         tags = [t for t in tags if not t.startswith(excluded_tags)]
         matches_for_report.append(
