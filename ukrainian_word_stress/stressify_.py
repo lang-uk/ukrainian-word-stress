@@ -1,4 +1,4 @@
-import pkg_resources
+from importlib import resources as pkg_resources
 import logging
 from enum import Enum
 from typing import List
@@ -55,7 +55,8 @@ class Stressifier:
                  stress_symbol=StressSymbol.AcuteAccent,
                  on_ambiguity=OnAmbiguity.Skip):
 
-        dict_path = pkg_resources.resource_filename('ukrainian_word_stress', 'data/stress.trie')
+        dict_path = pkg_resources.files('ukrainian_word_stress').joinpath('data/stress.trie')
+        
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(dict_path)
         self.nlp = stanza.Pipeline(
