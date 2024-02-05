@@ -119,7 +119,7 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
 
     if len(accents_by_tags) == 0:
         # dictionary word with missing accents (dictionary has to be fixed)
-        log.warning("The word `%s` is in dictionary, but lacks accents", base)
+        log.debug("The word `%s` is in dictionary, but lacks accents", base)
         return []
 
     if len(accents_by_tags) == 1:

@@ -153,6 +153,7 @@ $ echo замок | ukrainian-word-stress --on-ambiguity=all
 ## More docs
 
 * [Dictionary format](./docs/dictionary_format.md)
+* [Evaluation](./docs/evaluation.md)
 
 
 [1]: https://en.wikipedia.org/wiki/Heteronym_(linguistics)
