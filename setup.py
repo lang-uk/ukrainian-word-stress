@@ -8,12 +8,16 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+# Read __version__
+with open(path.join(here, "ukrainian_word_stress", "version.py")) as f:
+    exec(f.read())
+
 setup(
     name="ukrainian_word_stress",
     # Versions should comply with PEP440. For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="1.0.3",
+    version=__version__,
     description="Find word stress for texts in Ukrainian",
     long_description=long_description,
     long_description_content_type="text/markdown",

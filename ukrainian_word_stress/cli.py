@@ -1,7 +1,7 @@
 import argparse
 import fileinput
 import logging
-from ukrainian_word_stress import Stressifier, StressSymbol
+from ukrainian_word_stress import Stressifier, StressSymbol, __version__
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        print("ukrainian-word-stress 0.0.1")
+        print(f"ukrainian-word-stress {__version__}")
         return
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARNING)
