@@ -26,8 +26,8 @@ where
 
 | Version | Coverage |
 |---------|----------|
-|1.1.0    | 
 |1.2.0    | 92.75%   |
+|1.1.0    | 92.07%   |
 
 See [./docs/stats.txt](./docs/stats.txt) and
 [./scripts/compute_coverage.py](./scripts/compute_coverage.py) for more details.
