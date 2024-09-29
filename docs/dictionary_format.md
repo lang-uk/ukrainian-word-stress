@@ -27,11 +27,11 @@ where each entry is
 
 
 ```
-    b'{pos}\t{compressed_tags}\n'
+    b'{pos}\xFE{compressed_tags}\xFF'
 ```
 
 `compressed_tags` is a sequence of bytes, where each byte corresponds to
 a morphological or POS tag (see `ukrainian_word_stress.tags.TAGS`)
 
-`\t` (`0x9`) and `\n` (`0xa`) are one byte separators.
+`0xFE` and `0xFF` are one byte separators.
 
