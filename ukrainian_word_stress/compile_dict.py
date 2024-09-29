@@ -5,7 +5,7 @@ import collections
 import logging
 import tqdm
 
-from ukrainian_word_stress.tags import compress_tags
+from ukrainian_word_stress.tags import TAGS, compress_tags
 
 
 log = logging.getLogger(__name__)
@@ -15,6 +15,8 @@ ACCENT = '\u0301'
 VOWELS = "уеіїаояиюєУЕІАОЯИЮЄЇ"
 
 def compile(csv_path: str) -> marisa_trie.BytesTrie:
+    POS_SEP = TAGS['POS-separator']
+    REC_SEP = TAGS['Record-separator']
     trie = []
     by_basic = _parse_dictionary(csv_path)
     for basic, forms in by_basic.items():
@@ -26,7 +28,7 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
             value = b''
             for form, tags in forms:
                 pos = accent_pos(form)
-                compressed = pos + b'\t' + compress_tags(tags) + b'\n'
+                compressed = pos + POS_SEP + compress_tags(tags) + REC_SEP
                 if compressed not in value:
                     value += compressed
         trie.append((basic, value))

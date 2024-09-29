@@ -3,8 +3,8 @@ from typing import List
 
 # Maps known tags to a single byte code
 TAGS = {
-    "POS-separator": b'\x09',
-    "entry-separator": b'\x0a',
+    "POS-separator": b'\xFE',
+    "Record-separator": b'\xFF',
     "Number=Sing": b'\x11',
     "Number=Plur": b'\x12',
     "Case=Nom": b'\x20',
@@ -29,9 +29,9 @@ TAGS = {
     "upos=VERB": b'\x67',
     "upos=PROPN": b'\x68',
     "upos=ADV": b'\x69',
-    "upos=NOUN": b'\x6a',
-    "upos=NUM": b'\x6b',
-    "upos=ADP": b'\x6c',
+    "upos=NOUN": b'\x6A',
+    "upos=NUM": b'\x6B',
+    "upos=ADP": b'\x6C',
 
     # Skip these:
     "upos=СПОЛУКА": b'\x00',

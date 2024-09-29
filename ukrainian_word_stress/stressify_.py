@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List
 
 from ukrainian_word_stress.mutable_text import MutableText
-from ukrainian_word_stress.tags import decompress_tags
+from ukrainian_word_stress.tags import TAGS, decompress_tags
 
 import marisa_trie
 import stanza
@@ -173,9 +173,11 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
 
 
 def _parse_dictionary_value(value):
+    POS_SEP = TAGS['POS-separator']
+    REC_SEP = TAGS['Record-separator']
     accents_by_tags = []
     
-    if b'\n' not in value:
+    if REC_SEP not in value:
         # single item, all record is accent positions
         accents = [int(b) for b in value]
         tags = []
@@ -183,10 +185,10 @@ def _parse_dictionary_value(value):
 
     else:
         # words whose accent position depends on POS and other tags
-        items = value.split(b'\n')
+        items = value.split(REC_SEP)
         for item in items:
             if item:
-                accents, _, tags = item.partition(b'\t')
+                accents, _, tags = item.partition(POS_SEP)
                 accents = [int(b) for b in accents]
                 tags = decompress_tags(tags)
                 accents_by_tags.append((tags, accents))
