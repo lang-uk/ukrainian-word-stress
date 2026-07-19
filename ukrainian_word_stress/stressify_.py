@@ -4,6 +4,7 @@ from importlib import resources as pkg_resources
 import importlib.util
 import logging
 import re
+import warnings
 
 from ukrainian_word_stress.mutable_text import MutableText
 from ukrainian_word_stress.tags import TAGS, decompress_tags
@@ -127,17 +128,20 @@ class Stressifier:
                 log.info("Auto-selected the stanza disambiguation backend")
             else:
                 disambiguation = Disambiguation.Dictionary
-                # A warning rather than info: heteronyms will not be
-                # resolved by context, which 1.x users may not expect.
-                # Passing disambiguation=Disambiguation.Dictionary
-                # explicitly keeps this silent.
-                log.warning(
+                # warnings.warn rather than logging: it is visible by
+                # default regardless of the application's logging setup.
+                # Heteronyms will not be resolved by context, which 1.x
+                # users may not expect.  Passing
+                # disambiguation=Disambiguation.Dictionary explicitly
+                # keeps this silent.
+                warnings.warn(
                     "Stanza is not installed; using dictionary-only mode. "
-                    "Heteronyms follow the on_ambiguity='%s' strategy. "
-                    "Install ukrainian-word-stress[stanza] for context-aware "
-                    "disambiguation, or pass "
+                    f"Heteronyms follow the on_ambiguity='{on_ambiguity}' "
+                    "strategy. Install ukrainian-word-stress[stanza] for "
+                    "context-aware disambiguation, or pass "
                     "disambiguation=Disambiguation.Dictionary to silence "
-                    "this warning.", on_ambiguity)
+                    "this warning.",
+                    stacklevel=2)
 
         if disambiguation == Disambiguation.Stanza:
             self.nlp = _create_stanza_pipeline()

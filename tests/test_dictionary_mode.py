@@ -53,11 +53,21 @@ def test_hyphenated_compound_not_in_dictionary(stressify):
 def test_auto_falls_back_to_dictionary_without_stanza():
     # This is the default path for fresh installs without the [stanza]
     # extra.  It only runs in an environment where stanza is absent
-    # (e.g. the test-lite CI job).
+    # (e.g. the test-lite CI job).  The fallback must be visible to the
+    # end user as a UserWarning.
     if importlib.util.find_spec('stanza') is not None:
         pytest.skip("stanza is installed; auto would select the stanza backend")
-    stressify = Stressifier()
+    with pytest.warns(UserWarning, match="Stanza is not installed"):
+        stressify = Stressifier()
     assert stressify.disambiguation == Disambiguation.Dictionary
+    assert stressify("Україна") == "Украї´на"
+
+
+@pytest.mark.filterwarnings("error")
+def test_explicit_dictionary_mode_does_not_warn():
+    # Explicitly choosing dictionary mode is not a downgrade and must
+    # stay silent (filterwarnings turns any warning into an error here).
+    stressify = Stressifier(disambiguation=Disambiguation.Dictionary)
     assert stressify("Україна") == "Украї´на"
 
 
