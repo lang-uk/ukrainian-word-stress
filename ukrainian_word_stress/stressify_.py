@@ -117,10 +117,7 @@ class Stressifier:
                  on_ambiguity: str = OnAmbiguity.Skip,
                  disambiguation: str | None = Disambiguation.Auto) -> None:
 
-        dict_path = pkg_resources.files('ukrainian_word_stress').joinpath('data/stress.trie')
-
-        self.dict = marisa_trie.BytesTrie()
-        self.dict.load(str(dict_path))
+        self.dict = _load_dictionary()
 
         if disambiguation is None:
             disambiguation = Disambiguation.Dictionary
@@ -149,9 +146,15 @@ class Stressifier:
         else:
             raise ValueError(f"Unknown disambiguation value: {disambiguation}")
 
-        self.disambiguation = disambiguation
         self.stress_symbol = stress_symbol
         self.on_ambiguity = on_ambiguity
+
+    @property
+    def disambiguation(self) -> str:
+        """The resolved disambiguation backend in use."""
+        if self.nlp is None:
+            return Disambiguation.Dictionary
+        return Disambiguation.Stanza
 
     def __call__(self, text: str) -> str:
         if self.nlp is None:
@@ -161,10 +164,8 @@ class Stressifier:
         result = MutableText(text)
         log.debug("Parsed text: %s", parsed)
         for token in parsed.iter_tokens():
-            accents = find_accent_positions(self.dict, token.to_dict()[0], self.on_ambiguity)
-            accented_token = self._apply_accent_positions(token.text, accents)
-            if accented_token != token.text:
-                result.replace(token.start_char, token.end_char, accented_token)
+            self._stress_word(result, token.start_char, token.end_char,
+                              token.to_dict()[0])
 
         return result.get_edited_text()
 
@@ -172,34 +173,47 @@ class Stressifier:
         result = MutableText(text)
         for match in _WORD_RE.finditer(text):
             word = match.group()
-            if self._stress_word(result, match.start(), word):
+            if self._stress_word(result, match.start(), match.end(), {'text': word}):
                 continue
-            if '-' in word and _trie_value(self.dict, word) is None:
+            if '-' in word:
                 # Ad-hoc compound (Київ-Львів) that is not a dictionary
                 # entry as a whole: stress its parts individually
                 offset = match.start()
                 for part in word.split('-'):
-                    self._stress_word(result, offset, part)
+                    self._stress_word(result, offset, offset + len(part),
+                                      {'text': part})
                     offset += len(part) + 1
 
         return result.get_edited_text()
 
-    def _stress_word(self, result: MutableText, offset: int, word: str) -> bool:
-        """Add stress to a word at the given text offset.
+    def _stress_word(self, result: MutableText, start: int, end: int,
+                     parse: dict) -> bool:
+        """Add stress to the word at the [start, end) span of the text.
 
-        Returns True if a stress mark was placed.
+        Returns True if the word was found in the dictionary (whether or
+        not a stress mark was placed).
         """
-        accents = find_accent_positions(self.dict, {'text': word}, self.on_ambiguity)
-        if not accents:
+        values = _trie_value(self.dict, parse['text'])
+        if values is None:
+            log.debug("%s is not in the dictionary", parse['text'])
             return False
-        result.replace(offset, offset + len(word),
-                       self._apply_accent_positions(word, accents))
+        accents = _accent_positions_from_values(values, parse, self.on_ambiguity)
+        if accents:
+            result.replace(start, end,
+                           self._apply_accent_positions(parse['text'], accents))
         return True
 
     def _apply_accent_positions(self, s: str, positions: list[int]) -> str:
         for position in sorted(positions, reverse=True):
             s = s[:position] + self.stress_symbol + s[position:]
         return s
+
+
+def _load_dictionary() -> marisa_trie.BytesTrie:
+    dict_path = pkg_resources.files('ukrainian_word_stress').joinpath('data/stress.trie')
+    trie = marisa_trie.BytesTrie()
+    trie.load(str(dict_path))
+    return trie
 
 
 def _trie_value(trie: marisa_trie.BytesTrie, word: str) -> list | None:
@@ -210,13 +224,15 @@ def _trie_value(trie: marisa_trie.BytesTrie, word: str) -> list | None:
     apostrophes: "В'ЯЧЕСЛАВ".title() gives "В'Ячеслав" (apostrophe is a
     word boundary for title()), while capitalize() gives "В'ячеслав".
     """
+    if word in trie:
+        # Fast path: the vast majority of tokens match as-is
+        return trie[word]
+
     normalized = word.translate(_APOSTROPHES)
-    candidates = dict.fromkeys([
-        word, word.lower(), word.title(), word.capitalize(),
-        normalized, normalized.lower(), normalized.title(), normalized.capitalize(),
-    ])
-    for candidate in candidates:
-        if candidate in trie:
+    for candidate in (word.lower(), word.title(), word.capitalize(),
+                      normalized, normalized.lower(), normalized.title(),
+                      normalized.capitalize()):
+        if candidate != word and candidate in trie:
             return trie[candidate]
     return None
 
@@ -251,13 +267,18 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
           multiple valid accents.
     """
 
-    base = parse['text']
-    values = _trie_value(trie, base)
+    values = _trie_value(trie, parse['text'])
     if values is None:
         # non-dictionary word
-        log.debug("%s is not in the dictionary", base)
+        log.debug("%s is not in the dictionary", parse['text'])
         return []
+    return _accent_positions_from_values(values, parse, on_ambiguity)
 
+
+def _accent_positions_from_values(values: list,
+                                  parse: dict,
+                                  on_ambiguity: str = OnAmbiguity.Skip) -> list[int]:
+    base = parse['text']
     assert len(values) == 1
     accents_by_tags = _parse_dictionary_value(values[0])
 
@@ -266,7 +287,7 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
         log.warning("The word `%s` is in dictionary, but lacks accents", base)
         return []
 
-    if len({repr(accents) for _, accents in accents_by_tags}) == 1:
+    if len({tuple(accents) for _, accents in accents_by_tags}) == 1:
         # this word has no other stress options (its readings, if several,
         # all agree on the accents), so no need to look at POS and tags
         log.debug("`%s` has single accent, looks no further", base)
@@ -284,7 +305,7 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
             matches.append((tags, accents))
             log.debug("Found match for %s: %s (accent=%s)", base, tags, accents)
 
-    unique_accents = len({repr(accents) for _, accents in matches})
+    unique_accents = len({tuple(accents) for _, accents in matches})
 
     if unique_accents == 1:
         log.debug("Ambiguity resolved to a single option: %s", matches)
