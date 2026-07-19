@@ -63,14 +63,65 @@ Requires Python 3.9+.
 $ pip install ukrainian-word-stress
 ```
 
-Note, that on the first call this will download around 500M of Stanza resources.
-The default location for this is `~/stanza_resources`
+This installs the lightweight dictionary-only version (megabytes, no
+model downloads). It covers the ~98.7% of dictionary word forms that have
+a single valid stress pattern and skips heteronyms (see
+[Disambiguation modes](#disambiguation-modes) below).
+
+For the highest accuracy, install the Stanza backend as well:
+
+```bash
+$ pip install ukrainian-word-stress[stanza]
+```
+
+With Stanza installed, the first call downloads around 500M of Stanza
+resources. The default location for this is `~/stanza_resources`
+
+> **Upgrading from 1.x:** stanza is no longer installed by default.
+> Use `pip install ukrainian-word-stress[stanza]` to keep the previous
+> behavior. Existing environments that already have stanza installed
+> are not affected.
+
+
+### Disambiguation modes
+
+Most Ukrainian word forms (98.7% of the 2.9M dictionary entries) have
+exactly one valid stress pattern — a dictionary lookup answers them
+without any NLP. The rest are heteronyms (за́мок/замо́к) that need context.
+The `disambiguation` parameter controls how they are handled:
+
+* `auto` (default): use Stanza if it is installed, otherwise
+  dictionary-only.
+
+* `stanza`: parse the text with Stanza's POS/morphology pipeline and pick
+  the reading that matches. Best accuracy. Requires the `[stanza]` extra
+  (PyTorch, ~500MB of models).
+
+* `dictionary`: lookup only, no dependencies beyond the bundled trie.
+  Unambiguous words are handled identically to the Stanza mode; heteronyms
+  follow the `on_ambiguity` strategy (`skip` by default, i.e. no stress
+  mark rather than a wrong one).
+
+```python
+>>> from ukrainian_word_stress import Stressifier, Disambiguation
+>>> stressify = Stressifier(disambiguation=Disambiguation.Dictionary)
+>>> stressify("Привіт, як справи?")
+'Приві´т, як спра´ви?'
+```
+
+Or from the command line:
+
+```bash
+$ echo 'Привіт, як справи?' | ukrainian-word-stress --disambiguation=dictionary
+```
 
 
 ### Offline installation
 
-If the target machine has no internet access (or sits behind a firewall),
-the Stanza models can be downloaded elsewhere and copied over:
+The dictionary-only mode works fully offline out of the box.
+
+For the Stanza mode on a machine with no internet access (or behind a
+firewall), the models can be downloaded elsewhere and copied over:
 
 1. On a machine with internet access, run:
 
@@ -97,7 +148,8 @@ For example:
 * бло́хи - множина називного відмінку ("повсюди були бло́хи")
 
 We handle this more or less correctly by doing morphological and POS text parse
-with Stanza.
+with Stanza (in the `stanza` disambiguation mode; the `dictionary` mode
+falls back to the strategies below for all heteronyms).
 
 A much smaller category of heteronyms is where words have completely different meanings:
 
@@ -177,6 +229,8 @@ $ echo замок | ukrainian-word-stress --on-ambiguity=all
 ## More docs
 
 * [Dictionary format](./docs/dictionary_format.md)
+* [Adapting this approach to other languages](./docs/other_languages.md)
+* [Contributing (missing stresses, dev setup)](./CONTRIBUTING.md)
 
 
 [1]: https://en.wikipedia.org/wiki/Heteronym_(linguistics)

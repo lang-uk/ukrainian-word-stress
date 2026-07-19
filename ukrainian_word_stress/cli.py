@@ -12,6 +12,15 @@ def main() -> None:
     parser.add_argument("--version", action="store_true")
     parser.add_argument("--on-ambiguity", choices=["skip", "first", "all"], default='skip')
     parser.add_argument(
+        "--disambiguation",
+        choices=["auto", "stanza", "dictionary"],
+        default="auto",
+        help=("How to resolve heteronyms. `auto` (default) uses Stanza if "
+              "installed. `stanza` requires the [stanza] extra and downloads "
+              "~500MB of models on the first run. `dictionary` uses no extra "
+              "dependencies and no downloads."),
+    )
+    parser.add_argument(
         "--symbol",
         default="acute",
         help=("Which stress symbol to use. Default is `acute`. "
@@ -33,7 +42,11 @@ def main() -> None:
     elif args.symbol == "combining":
         args.symbol = StressSymbol.CombiningAcuteAccent
 
-    stressify = Stressifier(stress_symbol=args.symbol, on_ambiguity=args.on_ambiguity)
+    stressify = Stressifier(
+        stress_symbol=args.symbol,
+        on_ambiguity=args.on_ambiguity,
+        disambiguation=args.disambiguation,
+    )
     for line in fileinput.input(args.path):
         print(stressify(line), end="")
 

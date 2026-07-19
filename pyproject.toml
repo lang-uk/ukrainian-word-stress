@@ -13,7 +13,6 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "stanza>=1.7.0",
     "marisa-trie>=1.1.0",
 ]
 keywords = ["ukrainian", "nlp", "word", "stress", "accents", "dictionary", "linguistics"]
@@ -35,6 +34,7 @@ Repository = "https://github.com/lang-uk/ukrainian-word-stress"
 Issues = "https://github.com/lang-uk/ukrainian-word-stress/issues"
 
 [project.optional-dependencies]
+stanza = ["stanza>=1.7.0"]
 dev = ["tqdm", "ua-gec"]
 test = ["pytest", "coverage"]
 

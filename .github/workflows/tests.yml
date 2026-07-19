@@ -22,7 +22,7 @@ jobs:
           cache: pip
 
       - name: Install package
-        run: pip install .[test]
+        run: pip install .[stanza,test]
 
       - name: Get installed Stanza version
         id: stanza
@@ -39,3 +39,20 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+  # The dictionary-only mode must work without stanza installed
+  test-lite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package (no stanza)
+        run: pip install .[test]
+
+      - name: Run dictionary-only tests
+        run: pytest -v tests/test_dictionary_mode.py tests/test_compile_dict.py

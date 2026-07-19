@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from importlib import resources as pkg_resources
+import importlib.util
 import logging
+import re
 
 from ukrainian_word_stress.mutable_text import MutableText
 from ukrainian_word_stress.tags import TAGS, decompress_tags
 
 import marisa_trie
-import stanza
 
 
 log = logging.getLogger(__name__)
@@ -26,7 +27,31 @@ on a machine with internet access:
 and copy the resulting ~/stanza_resources directory to the same location \
 on the target machine. A custom location can be set with the \
 STANZA_RESOURCES_DIR environment variable on both machines.
+
+Alternatively, use the dictionary-only mode, which needs no Stanza at all:
+
+    Stressifier(disambiguation=Disambiguation.Dictionary)
 """
+
+_STANZA_MISSING_HELP = """\
+The 'stanza' disambiguation backend requires the stanza package, which is \
+not installed. Install it with:
+
+    pip install ukrainian-word-stress[stanza]
+
+or use the dictionary-only mode, which needs no extra dependencies:
+
+    Stressifier(disambiguation=Disambiguation.Dictionary)
+"""
+
+# Matches words: letter runs optionally joined by apostrophes or hyphens
+# (м'яч, буль-буль).  Digits and underscores are not part of dictionary
+# entries, so they are excluded.
+_WORD_RE = re.compile(r"[^\W\d_]+(?:['’ʼ`-][^\W\d_]+)*")
+
+# The dictionary stores apostrophes as U+0027; real-world texts often use
+# typographic variants instead.
+_APOSTROPHES = str.maketrans("’ʼ`", "'''")
 
 
 class StressSymbol:
@@ -38,6 +63,12 @@ class OnAmbiguity:
     Skip = "skip"
     First = "first"
     All = "all"
+
+
+class Disambiguation:
+    Auto = "auto"
+    Stanza = "stanza"
+    Dictionary = "dictionary"
 
 
 class Stressifier:
@@ -59,6 +90,20 @@ class Stressifier:
                 This will look as multiple stress symbols in one word
                 (за´мо´к)
 
+        `disambiguation`: How to resolve heteronyms (words that share
+            spelling but differ in stress, like за´мок/замо´к).
+            - `Disambiguation.Auto` (default): use Stanza if it is
+                installed, otherwise fall back to dictionary-only mode.
+            - `Disambiguation.Stanza`: parse the text with the Stanza NLP
+                pipeline and use POS/morphology to pick the right stress.
+                Requires `pip install ukrainian-word-stress[stanza]` and
+                downloads ~500 MB of models on the first run.
+            - `Disambiguation.Dictionary` (or `None`): dictionary lookup
+                only. No extra dependencies and no model downloads.
+                About 98.7% of dictionary entries have a single stress
+                variant and are handled identically to the Stanza mode;
+                the rest follow the `on_ambiguity` strategy.
+
     Example:
         >>> stressify = Stressifier()
         >>> stressify("Привіт, як справи?")
@@ -69,17 +114,38 @@ class Stressifier:
 
     def __init__(self,
                  stress_symbol: str = StressSymbol.AcuteAccent,
-                 on_ambiguity: str = OnAmbiguity.Skip) -> None:
+                 on_ambiguity: str = OnAmbiguity.Skip,
+                 disambiguation: str | None = Disambiguation.Auto) -> None:
 
         dict_path = pkg_resources.files('ukrainian_word_stress').joinpath('data/stress.trie')
 
         self.dict = marisa_trie.BytesTrie()
         self.dict.load(str(dict_path))
-        self.nlp = _create_stanza_pipeline()
+
+        if disambiguation is None:
+            disambiguation = Disambiguation.Dictionary
+        if disambiguation == Disambiguation.Auto:
+            if importlib.util.find_spec('stanza') is not None:
+                disambiguation = Disambiguation.Stanza
+            else:
+                disambiguation = Disambiguation.Dictionary
+            log.info("Auto-selected '%s' disambiguation", disambiguation)
+
+        if disambiguation == Disambiguation.Stanza:
+            self.nlp = _create_stanza_pipeline()
+        elif disambiguation == Disambiguation.Dictionary:
+            self.nlp = None
+        else:
+            raise ValueError(f"Unknown disambiguation value: {disambiguation}")
+
+        self.disambiguation = disambiguation
         self.stress_symbol = stress_symbol
         self.on_ambiguity = on_ambiguity
 
     def __call__(self, text: str) -> str:
+        if self.nlp is None:
+            return self._stressify_dictionary_only(text)
+
         parsed = self.nlp(text)
         result = MutableText(text)
         log.debug("Parsed text: %s", parsed)
@@ -91,13 +157,42 @@ class Stressifier:
 
         return result.get_edited_text()
 
+    def _stressify_dictionary_only(self, text: str) -> str:
+        result = MutableText(text)
+        for match in _WORD_RE.finditer(text):
+            word = match.group()
+            accents = find_accent_positions(self.dict, {'text': word}, self.on_ambiguity)
+            if accents:
+                result.replace(match.start(), match.end(),
+                               self._apply_accent_positions(word, accents))
+            elif '-' in word and not self._in_dictionary(word):
+                # Ad-hoc compound (Київ-Львів) that is not a dictionary
+                # entry as a whole: stress its parts individually
+                offset = match.start()
+                for part in word.split('-'):
+                    accents = find_accent_positions(self.dict, {'text': part}, self.on_ambiguity)
+                    if accents:
+                        result.replace(offset, offset + len(part),
+                                       self._apply_accent_positions(part, accents))
+                    offset += len(part) + 1
+
+        return result.get_edited_text()
+
+    def _in_dictionary(self, word: str) -> bool:
+        return bool(find_accent_positions(self.dict, {'text': word}, OnAmbiguity.First))
+
     def _apply_accent_positions(self, s: str, positions: list[int]) -> str:
         for position in sorted(positions, reverse=True):
             s = s[:position] + self.stress_symbol + s[position:]
         return s
 
 
-def _create_stanza_pipeline() -> stanza.Pipeline:
+def _create_stanza_pipeline():
+    try:
+        import stanza
+    except ImportError as exc:
+        raise RuntimeError(_STANZA_MISSING_HELP) from exc
+
     try:
         return stanza.Pipeline(
             'uk',
@@ -123,7 +218,12 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
     """
 
     base = parse['text']
-    for word in (base, base.lower(), base.title()):
+    normalized = base.translate(_APOSTROPHES)
+    candidates = dict.fromkeys([
+        base, base.lower(), base.title(),
+        normalized, normalized.lower(), normalized.title(),
+    ])
+    for word in candidates:
         if word in trie:
             values = trie[word]
             break
@@ -168,6 +268,12 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
     if unique_accents == 0:
         # Nothing matched the parse, consider all dictionary options
         matches = accents_by_tags
+        unique_accents = len({repr(accents) for _, accents in matches})
+        if unique_accents == 1:
+            # All dictionary readings agree on the accents, so the word
+            # is not really ambiguous for our purposes
+            log.debug("All readings of `%s` share the same accents", base)
+            return matches[0][1]
 
     # If we reach here:
     # - the word have multiple stress options and none of them matched the dictionary
