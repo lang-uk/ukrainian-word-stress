@@ -79,8 +79,11 @@ resources. The default location for this is `~/stanza_resources`
 
 > **Upgrading from 1.x:** stanza is no longer installed by default.
 > Use `pip install ukrainian-word-stress[stanza]` to keep the previous
-> behavior. Existing environments that already have stanza installed
-> are not affected.
+> behavior. Environments that already have stanza installed keep using
+> the Stanza backend automatically. Note that 2.0 also closes a few
+> lookup gaps in both modes (typographic apostrophes, words whose
+> readings all agree on stress), so some words that 1.x left unstressed
+> now receive a stress mark.
 
 
 ### Disambiguation modes

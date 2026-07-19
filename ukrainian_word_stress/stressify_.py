@@ -161,30 +161,53 @@ class Stressifier:
         result = MutableText(text)
         for match in _WORD_RE.finditer(text):
             word = match.group()
-            accents = find_accent_positions(self.dict, {'text': word}, self.on_ambiguity)
-            if accents:
-                result.replace(match.start(), match.end(),
-                               self._apply_accent_positions(word, accents))
-            elif '-' in word and not self._in_dictionary(word):
+            if self._stress_word(result, match.start(), word):
+                continue
+            if '-' in word and _trie_value(self.dict, word) is None:
                 # Ad-hoc compound (Київ-Львів) that is not a dictionary
                 # entry as a whole: stress its parts individually
                 offset = match.start()
                 for part in word.split('-'):
-                    accents = find_accent_positions(self.dict, {'text': part}, self.on_ambiguity)
-                    if accents:
-                        result.replace(offset, offset + len(part),
-                                       self._apply_accent_positions(part, accents))
+                    self._stress_word(result, offset, part)
                     offset += len(part) + 1
 
         return result.get_edited_text()
 
-    def _in_dictionary(self, word: str) -> bool:
-        return bool(find_accent_positions(self.dict, {'text': word}, OnAmbiguity.First))
+    def _stress_word(self, result: MutableText, offset: int, word: str) -> bool:
+        """Add stress to a word at the given text offset.
+
+        Returns True if a stress mark was placed.
+        """
+        accents = find_accent_positions(self.dict, {'text': word}, self.on_ambiguity)
+        if not accents:
+            return False
+        result.replace(offset, offset + len(word),
+                       self._apply_accent_positions(word, accents))
+        return True
 
     def _apply_accent_positions(self, s: str, positions: list[int]) -> str:
         for position in sorted(positions, reverse=True):
             s = s[:position] + self.stress_symbol + s[position:]
         return s
+
+
+def _trie_value(trie: marisa_trie.BytesTrie, word: str) -> list | None:
+    """Return the trie values for the word, or None if it is not present.
+
+    Case variants and typographic apostrophe variants of the word are
+    tried as well.  `capitalize()` complements `title()` for words with
+    apostrophes: "В'ЯЧЕСЛАВ".title() gives "В'Ячеслав" (apostrophe is a
+    word boundary for title()), while capitalize() gives "В'ячеслав".
+    """
+    normalized = word.translate(_APOSTROPHES)
+    candidates = dict.fromkeys([
+        word, word.lower(), word.title(), word.capitalize(),
+        normalized, normalized.lower(), normalized.title(), normalized.capitalize(),
+    ])
+    for candidate in candidates:
+        if candidate in trie:
+            return trie[candidate]
+    return None
 
 
 def _create_stanza_pipeline():
@@ -218,16 +241,8 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
     """
 
     base = parse['text']
-    normalized = base.translate(_APOSTROPHES)
-    candidates = dict.fromkeys([
-        base, base.lower(), base.title(),
-        normalized, normalized.lower(), normalized.title(),
-    ])
-    for word in candidates:
-        if word in trie:
-            values = trie[word]
-            break
-    else:
+    values = _trie_value(trie, base)
+    if values is None:
         # non-dictionary word
         log.debug("%s is not in the dictionary", base)
         return []
@@ -240,9 +255,9 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
         log.warning("The word `%s` is in dictionary, but lacks accents", base)
         return []
 
-    if len(accents_by_tags) == 1:
-        # this word has no other stress options, so no need 
-        # to look at POS and tags
+    if len({repr(accents) for _, accents in accents_by_tags}) == 1:
+        # this word has no other stress options (its readings, if several,
+        # all agree on the accents), so no need to look at POS and tags
         log.debug("`%s` has single accent, looks no further", base)
         return accents_by_tags[0][1]
 
@@ -268,12 +283,6 @@ def find_accent_positions(trie: marisa_trie.BytesTrie,
     if unique_accents == 0:
         # Nothing matched the parse, consider all dictionary options
         matches = accents_by_tags
-        unique_accents = len({repr(accents) for _, accents in matches})
-        if unique_accents == 1:
-            # All dictionary readings agree on the accents, so the word
-            # is not really ambiguous for our purposes
-            log.debug("All readings of `%s` share the same accents", base)
-            return matches[0][1]
 
     # If we reach here:
     # - the word have multiple stress options and none of them matched the dictionary

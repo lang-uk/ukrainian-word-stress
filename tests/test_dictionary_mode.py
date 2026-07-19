@@ -3,6 +3,7 @@
 # These run without stanza installed and without any model downloads,
 # so they can execute in fully offline environments.
 
+import importlib.util
 import subprocess
 import sys
 
@@ -47,6 +48,17 @@ def test_hyphenated(stressify):
 def test_hyphenated_compound_not_in_dictionary(stressify):
     # The compound is not a dictionary entry, but its parts are
     assert stressify("потяг Київ-Львів") == "потяг Ки´їв-Львів"
+
+
+def test_auto_falls_back_to_dictionary_without_stanza():
+    # This is the default path for fresh installs without the [stanza]
+    # extra.  It only runs in an environment where stanza is absent
+    # (e.g. the test-lite CI job).
+    if importlib.util.find_spec('stanza') is not None:
+        pytest.skip("stanza is installed; auto would select the stanza backend")
+    stressify = Stressifier()
+    assert stressify.disambiguation == Disambiguation.Dictionary
+    assert stressify("Україна") == "Украї´на"
 
 
 def test_none_is_dictionary_mode():
