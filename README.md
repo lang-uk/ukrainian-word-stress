@@ -1,6 +1,10 @@
 Ukrainian word stress
 =====================
 
+[![Tests](https://github.com/lang-uk/ukrainian-word-stress/actions/workflows/tests.yml/badge.svg)](https://github.com/lang-uk/ukrainian-word-stress/actions/workflows/tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/ukrainian-word-stress.svg)](https://pypi.org/project/ukrainian-word-stress/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ukrainian-word-stress.svg)](https://pypi.org/project/ukrainian-word-stress/)
+
 Word stress is an emphasis we place on a particular syllable of a word as
 we pronounce it: ма́ма
 
@@ -53,12 +57,32 @@ $ echo 'Золоті яйця, але нема ні яйця' | ukrainian-word-s
 
 ## Setup
 
+Requires Python 3.9+.
+
 ```bash
 $ pip install ukrainian-word-stress
 ```
 
 Note, that on the first call this will download around 500M of Stanza resources.
 The default location for this is `~/stanza_resources`
+
+
+### Offline installation
+
+If the target machine has no internet access (or sits behind a firewall),
+the Stanza models can be downloaded elsewhere and copied over:
+
+1. On a machine with internet access, run:
+
+   ```bash
+   python -c "import stanza; stanza.download('uk')"
+   ```
+
+2. Copy the resulting `~/stanza_resources` directory to the same location
+   on the target machine.
+
+A custom location can be set with the `STANZA_RESOURCES_DIR` environment
+variable on both machines.
 
 
 ## Handling ambiguity

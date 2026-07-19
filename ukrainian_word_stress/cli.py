@@ -4,7 +4,7 @@ import logging
 from ukrainian_word_stress import Stressifier, StressSymbol, __version__
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Add stress mark to texts in Ukrainian"
     )

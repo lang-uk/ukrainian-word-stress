@@ -1,3 +1,5 @@
+from importlib import resources as pkg_resources
+
 from ukrainian_word_stress import find_accent_positions, Stressifier, OnAmbiguity
 import marisa_trie
 import pytest
@@ -115,8 +117,9 @@ def test_find_accent_positions_mulitple(trie):
 
 @pytest.fixture(scope='module')
 def trie():
+    path = pkg_resources.files('ukrainian_word_stress').joinpath('data/stress.trie')
     result = marisa_trie.BytesTrie()
-    result.load("./ukrainian_word_stress/data/stress.trie")
+    result.load(str(path))
     return result
 
 

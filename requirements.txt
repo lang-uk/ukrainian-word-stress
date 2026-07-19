@@ -1,2 +1,0 @@
-stanza==1.7.0
-marisa-trie==1.1.0

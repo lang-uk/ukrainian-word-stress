@@ -1,18 +1,21 @@
+from __future__ import annotations
+
+
 class MutableText:
     """Text that can be modified in-place."""
 
-    def __init__(self, text):
+    def __init__(self, text: str) -> None:
         self._text = text
-        self._edits = []
+        self._edits: list[tuple[int, int, str]] = []
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Pretend to be a normal string. """
         return self.get_edited_text()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<MutableText({})>".format(repr(str(self)))
 
-    def replace(self, start, end, value):
+    def replace(self, start: int, end: int, value: str) -> None:
         """Replace substring with a value.
 
         Example:
@@ -23,13 +26,13 @@ class MutableText:
         """
         self._edits.append((start, end, value))  # TODO: keep _edits sorted?
 
-    def apply_edits(self):
+    def apply_edits(self) -> None:
         """Applies all edits made so far. """
 
         self._text = self.get_edited_text()
         self._edits = []
 
-    def get_source_text(self):
+    def get_source_text(self) -> str:
         """Return string without pending edits applied.
 
         Example:
@@ -40,7 +43,7 @@ class MutableText:
         """
         return self._text
 
-    def get_edited_text(self):
+    def get_edited_text(self) -> str:
         """Return text with all corrections applied.
 
         Example::

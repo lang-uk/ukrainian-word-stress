@@ -3,7 +3,6 @@ import csv
 import sys
 import collections
 import logging
-import tqdm
 
 from ukrainian_word_stress.tags import TAGS, compress_tags
 
@@ -36,6 +35,8 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
 
 
 def _parse_dictionary(csv_path):
+    import tqdm  # dev-only dependency, install with `pip install ukrainian-word-stress[dev]`
+
     by_basic = collections.defaultdict(list)  # TODO: change to set
     skipped = 0
     for row in tqdm.tqdm(csv.DictReader(open(csv_path))):

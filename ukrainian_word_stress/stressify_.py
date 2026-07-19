@@ -1,7 +1,7 @@
+from __future__ import annotations
+
 from importlib import resources as pkg_resources
 import logging
-from enum import Enum
-from typing import List
 
 from ukrainian_word_stress.mutable_text import MutableText
 from ukrainian_word_stress.tags import TAGS, decompress_tags
@@ -11,6 +11,22 @@ import stanza
 
 
 log = logging.getLogger(__name__)
+
+_STANZA_INIT_HELP = """\
+Failed to initialize the Stanza NLP pipeline for Ukrainian \
+(see the original error above).
+
+On the first run, ukrainian-word-stress downloads Stanza models for \
+Ukrainian (about 500 MB) into ~/stanza_resources. If the error above is a \
+network error (proxy, firewall, or offline machine), download the models \
+on a machine with internet access:
+
+    python -c "import stanza; stanza.download('uk')"
+
+and copy the resulting ~/stanza_resources directory to the same location \
+on the target machine. A custom location can be set with the \
+STANZA_RESOURCES_DIR environment variable on both machines.
+"""
 
 
 class StressSymbol:
@@ -52,23 +68,18 @@ class Stressifier:
 
 
     def __init__(self,
-                 stress_symbol=StressSymbol.AcuteAccent,
-                 on_ambiguity=OnAmbiguity.Skip):
+                 stress_symbol: str = StressSymbol.AcuteAccent,
+                 on_ambiguity: str = OnAmbiguity.Skip) -> None:
 
         dict_path = pkg_resources.files('ukrainian_word_stress').joinpath('data/stress.trie')
-        
+
         self.dict = marisa_trie.BytesTrie()
-        self.dict.load(dict_path)
-        self.nlp = stanza.Pipeline(
-            'uk',
-            processors='tokenize,pos,mwt',
-            download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES,
-            logging_level=logging.getLevelName(log.getEffectiveLevel())
-        )
+        self.dict.load(str(dict_path))
+        self.nlp = _create_stanza_pipeline()
         self.stress_symbol = stress_symbol
         self.on_ambiguity = on_ambiguity
 
-    def __call__(self, text):
+    def __call__(self, text: str) -> str:
         parsed = self.nlp(text)
         result = MutableText(text)
         log.debug("Parsed text: %s", parsed)
@@ -80,13 +91,27 @@ class Stressifier:
 
         return result.get_edited_text()
 
-    def _apply_accent_positions(self, s, positions):
+    def _apply_accent_positions(self, s: str, positions: list[int]) -> str:
         for position in sorted(positions, reverse=True):
             s = s[:position] + self.stress_symbol + s[position:]
         return s
 
 
-def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[int]:
+def _create_stanza_pipeline() -> stanza.Pipeline:
+    try:
+        return stanza.Pipeline(
+            'uk',
+            processors='tokenize,pos,mwt',
+            download_method=stanza.pipeline.core.DownloadMethod.REUSE_RESOURCES,
+            logging_level=logging.getLevelName(log.getEffectiveLevel())
+        )
+    except Exception as exc:
+        raise RuntimeError(_STANZA_INIT_HELP) from exc
+
+
+def find_accent_positions(trie: marisa_trie.BytesTrie,
+                          parse: dict,
+                          on_ambiguity: str = OnAmbiguity.Skip) -> list[int]:
     """Return best accent guess for the given token parsed tags.
 
     Returns:
@@ -172,11 +197,11 @@ def find_accent_positions(trie, parse, on_ambiguity=OnAmbiguity.Skip) -> List[in
         raise ValueError(f"Unknown on_ambiguity value: {on_ambiguity}")
 
 
-def _parse_dictionary_value(value):
+def _parse_dictionary_value(value: bytes) -> list[tuple[list[str], list[int]]]:
     POS_SEP = TAGS['POS-separator']
     REC_SEP = TAGS['Record-separator']
     accents_by_tags = []
-    
+
     if REC_SEP not in value:
         # single item, all record is accent positions
         accents = [int(b) for b in value]
