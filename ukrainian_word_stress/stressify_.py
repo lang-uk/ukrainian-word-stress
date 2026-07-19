@@ -86,7 +86,7 @@ class Stressifier:
         for token in parsed.iter_tokens():
             accents = find_accent_positions(self.dict, token.to_dict()[0], self.on_ambiguity)
             accented_token = self._apply_accent_positions(token.text, accents)
-            if accented_token != token:
+            if accented_token != token.text:
                 result.replace(token.start_char, token.end_char, accented_token)
 
         return result.get_edited_text()
