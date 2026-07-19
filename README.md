@@ -54,6 +54,12 @@ $ echo 'Золоті яйця, але нема ні яйця' | ukrainian-word-s
 Золоті´ я´йця, але´ нема´ ні яйця´
 ```
 
+Note: this example resolves the two different readings of `яйця` from
+context, which requires the Stanza backend
+(`pip install ukrainian-word-stress[stanza]`). The default lightweight
+install skips such ambiguous words instead of guessing — see
+[Disambiguation modes](#disambiguation-modes).
+
 
 ## Setup
 
