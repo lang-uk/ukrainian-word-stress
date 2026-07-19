@@ -127,9 +127,20 @@ class Stressifier:
         if disambiguation == Disambiguation.Auto:
             if importlib.util.find_spec('stanza') is not None:
                 disambiguation = Disambiguation.Stanza
+                log.info("Auto-selected the stanza disambiguation backend")
             else:
                 disambiguation = Disambiguation.Dictionary
-            log.info("Auto-selected '%s' disambiguation", disambiguation)
+                # A warning rather than info: heteronyms will not be
+                # resolved by context, which 1.x users may not expect.
+                # Passing disambiguation=Disambiguation.Dictionary
+                # explicitly keeps this silent.
+                log.warning(
+                    "Stanza is not installed; using dictionary-only mode. "
+                    "Heteronyms follow the on_ambiguity='%s' strategy. "
+                    "Install ukrainian-word-stress[stanza] for context-aware "
+                    "disambiguation, or pass "
+                    "disambiguation=Disambiguation.Dictionary to silence "
+                    "this warning.", on_ambiguity)
 
         if disambiguation == Disambiguation.Stanza:
             self.nlp = _create_stanza_pipeline()
