@@ -55,10 +55,9 @@ $ echo 'Золоті яйця, але нема ні яйця' | ukrainian-word-s
 ```
 
 Note: this example resolves the two different readings of `яйця` from
-context, which requires the Stanza backend
-(`pip install ukrainian-word-stress[stanza]`). The default lightweight
-install skips such ambiguous words instead of guessing — see
-[Disambiguation modes](#disambiguation-modes).
+context, which requires the Stanza backend (installed by default). The
+lightweight dictionary-only mode skips such ambiguous words instead of
+guessing — see [Disambiguation modes](#disambiguation-modes).
 
 
 ## Setup
@@ -69,27 +68,39 @@ Requires Python 3.9+.
 $ pip install ukrainian-word-stress
 ```
 
-This installs the lightweight dictionary-only version (megabytes, no
-model downloads). It covers the ~98.7% of dictionary word forms that have
-a single valid stress pattern and skips heteronyms (see
-[Disambiguation modes](#disambiguation-modes) below).
+This installs the full version, including the Stanza NLP backend used to
+resolve heteronyms from context. On the first call it downloads around
+500M of Stanza resources; the default location for this is
+`~/stanza_resources`
 
-For the highest accuracy, install the Stanza backend as well:
+
+#### Lightweight installation (no Stanza, no PyTorch)
+
+For TTS pipelines and other size-constrained environments, the package
+also works in a dictionary-only mode that needs nothing beyond
+`marisa-trie` (megabytes instead of gigabytes, no model downloads).
+pip cannot exclude a dependency with a flag, so the lightweight install
+uses `--no-deps`:
 
 ```bash
-$ pip install ukrainian-word-stress[stanza]
+$ pip install --no-deps ukrainian-word-stress
+$ pip install marisa-trie
 ```
 
-With Stanza installed, the first call downloads around 500M of Stanza
-resources. The default location for this is `~/stanza_resources`
+(pip may later warn that `stanza is not installed` for this environment —
+that is expected with `--no-deps` and harmless.)
 
-> **Upgrading from 1.x:** stanza is no longer installed by default.
-> Use `pip install ukrainian-word-stress[stanza]` to keep the previous
-> behavior. Environments that already have stanza installed keep using
-> the Stanza backend automatically. Note that 2.0 also closes a few
-> lookup gaps in both modes (typographic apostrophes, words whose
-> readings all agree on stress), so some words that 1.x left unstressed
-> now receive a stress mark.
+Without stanza installed, `Stressifier()` automatically runs in the
+dictionary-only mode: it covers the ~98.7% of dictionary word forms that
+have a single valid stress pattern and skips heteronyms (see
+[Disambiguation modes](#disambiguation-modes) below).
+
+> **Note for 2.0.0 users:** 2.0.0 briefly made the lightweight version
+> the default install. Starting with 2.1.0, `pip install
+> ukrainian-word-stress` installs Stanza again, matching 1.x. Also since
+> 2.0.0, a few lookup gaps are closed in both modes (typographic
+> apostrophes, words whose readings all agree on stress), so some words
+> that 1.x left unstressed now receive a stress mark.
 
 
 ### Disambiguation modes
@@ -103,8 +114,8 @@ The `disambiguation` parameter controls how they are handled:
   dictionary-only.
 
 * `stanza`: parse the text with Stanza's POS/morphology pipeline and pick
-  the reading that matches. Best accuracy. Requires the `[stanza]` extra
-  (PyTorch, ~500MB of models).
+  the reading that matches. Best accuracy. Requires the stanza package
+  (installed by default; PyTorch, ~500MB of models).
 
 * `dictionary`: lookup only, no dependencies beyond the bundled trie.
   Unambiguous words are handled identically to the Stanza mode; heteronyms

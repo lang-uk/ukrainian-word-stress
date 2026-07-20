@@ -14,6 +14,7 @@ authors = [
 requires-python = ">=3.9"
 dependencies = [
     "marisa-trie>=1.1.0",
+    "stanza>=1.7.0",
 ]
 keywords = ["ukrainian", "nlp", "word", "stress", "accents", "dictionary", "linguistics"]
 classifiers = [
@@ -34,6 +35,8 @@ Repository = "https://github.com/lang-uk/ukrainian-word-stress"
 Issues = "https://github.com/lang-uk/ukrainian-word-stress/issues"
 
 [project.optional-dependencies]
+# Kept as an alias for 2.0.0-era instructions; stanza is now a default
+# dependency again
 stanza = ["stanza>=1.7.0"]
 dev = ["tqdm", "ua-gec"]
 test = ["pytest", "coverage"]

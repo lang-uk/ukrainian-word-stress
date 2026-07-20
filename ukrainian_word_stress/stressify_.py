@@ -38,7 +38,7 @@ _STANZA_MISSING_HELP = """\
 The 'stanza' disambiguation backend requires the stanza package, which is \
 not installed. Install it with:
 
-    pip install ukrainian-word-stress[stanza]
+    pip install stanza
 
 or use the dictionary-only mode, which needs no extra dependencies:
 
@@ -97,7 +97,7 @@ class Stressifier:
                 installed, otherwise fall back to dictionary-only mode.
             - `Disambiguation.Stanza`: parse the text with the Stanza NLP
                 pipeline and use POS/morphology to pick the right stress.
-                Requires `pip install ukrainian-word-stress[stanza]` and
+                Requires the stanza package (installed by default) and
                 downloads ~500 MB of models on the first run.
             - `Disambiguation.Dictionary` (or `None`): dictionary lookup
                 only. No extra dependencies and no model downloads.
@@ -137,7 +137,7 @@ class Stressifier:
                 warnings.warn(
                     "Stanza is not installed; using dictionary-only mode. "
                     f"Heteronyms follow the on_ambiguity='{on_ambiguity}' "
-                    "strategy. Install ukrainian-word-stress[stanza] for "
+                    "strategy. Install the stanza package for "
                     "context-aware disambiguation, or pass "
                     "disambiguation=Disambiguation.Dictionary to silence "
                     "this warning.",

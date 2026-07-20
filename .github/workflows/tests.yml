@@ -22,7 +22,7 @@ jobs:
           cache: pip
 
       - name: Install package
-        run: pip install .[stanza,test]
+        run: pip install .[test]
 
       - name: Get installed Stanza version
         id: stanza
@@ -52,7 +52,10 @@ jobs:
           cache: pip
 
       - name: Install package (no stanza)
-        run: pip install .[test]
+        # Mirrors the documented lightweight install: --no-deps + marisa-trie
+        run: |
+          pip install --no-deps .
+          pip install marisa-trie pytest
 
       - name: Run dictionary-only tests
         run: pytest -v tests/test_dictionary_mode.py tests/test_compile_dict.py

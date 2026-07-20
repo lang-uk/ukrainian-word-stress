@@ -16,9 +16,9 @@ def main() -> None:
         choices=["auto", "stanza", "dictionary"],
         default="auto",
         help=("How to resolve heteronyms. `auto` (default) uses Stanza if "
-              "installed. `stanza` requires the [stanza] extra and downloads "
-              "~500MB of models on the first run. `dictionary` uses no extra "
-              "dependencies and no downloads."),
+              "installed. `stanza` requires the stanza package (installed "
+              "by default) and downloads ~500MB of models on the first run. "
+              "`dictionary` uses no extra dependencies and no downloads."),
     )
     parser.add_argument(
         "--symbol",
