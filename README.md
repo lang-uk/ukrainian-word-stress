@@ -80,7 +80,7 @@ resolve heteronyms from context. On the first call it downloads around
 > receive a stress mark in both modes.
 
 
-#### Lightweight installation (no Stanza, no PyTorch)
+### Lightweight installation (no Stanza, no PyTorch)
 
 For TTS pipelines and other size-constrained environments, the package
 also works in a dictionary-only mode that needs nothing beyond
