@@ -4,13 +4,22 @@ import logging
 from ukrainian_word_stress import Stressifier, StressSymbol, __version__
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Add stress mark to texts in Ukrainian"
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--version", action="store_true")
     parser.add_argument("--on-ambiguity", choices=["skip", "first", "all"], default='skip')
+    parser.add_argument(
+        "--disambiguation",
+        choices=["auto", "stanza", "dictionary"],
+        default="auto",
+        help=("How to resolve heteronyms. `auto` (default) uses Stanza if "
+              "installed. `stanza` requires the [stanza] extra and downloads "
+              "~500MB of models on the first run. `dictionary` uses no extra "
+              "dependencies and no downloads."),
+    )
     parser.add_argument(
         "--symbol",
         default="acute",
@@ -33,7 +42,11 @@ def main():
     elif args.symbol == "combining":
         args.symbol = StressSymbol.CombiningAcuteAccent
 
-    stressify = Stressifier(stress_symbol=args.symbol, on_ambiguity=args.on_ambiguity)
+    stressify = Stressifier(
+        stress_symbol=args.symbol,
+        on_ambiguity=args.on_ambiguity,
+        disambiguation=args.disambiguation,
+    )
     for line in fileinput.input(args.path):
         print(stressify(line), end="")
 

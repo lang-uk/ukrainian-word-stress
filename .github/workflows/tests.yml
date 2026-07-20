@@ -1,0 +1,58 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package
+        run: pip install .[stanza,test]
+
+      - name: Get installed Stanza version
+        id: stanza
+        run: echo "version=$(pip show stanza | awk '/^Version:/{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Stanza resources
+        uses: actions/cache@v4
+        with:
+          path: ~/stanza_resources
+          key: stanza-resources-uk-${{ steps.stanza.outputs.version }}
+
+      - name: Download Stanza models for Ukrainian
+        run: python -c "import stanza; stanza.download('uk', processors='tokenize,pos,mwt')"
+
+      - name: Run tests
+        run: pytest -v
+
+  # The dictionary-only mode must work without stanza installed
+  test-lite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package (no stanza)
+        run: pip install .[test]
+
+      - name: Run dictionary-only tests
+        run: pytest -v tests/test_dictionary_mode.py tests/test_compile_dict.py

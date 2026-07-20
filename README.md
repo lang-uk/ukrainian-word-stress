@@ -1,6 +1,10 @@
 Ukrainian word stress
 =====================
 
+[![Tests](https://github.com/lang-uk/ukrainian-word-stress/actions/workflows/tests.yml/badge.svg)](https://github.com/lang-uk/ukrainian-word-stress/actions/workflows/tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/ukrainian-word-stress.svg)](https://pypi.org/project/ukrainian-word-stress/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ukrainian-word-stress.svg)](https://pypi.org/project/ukrainian-word-stress/)
+
 Word stress is an emphasis we place on a particular syllable of a word as
 we pronounce it: ма́ма
 
@@ -50,15 +54,95 @@ $ echo 'Золоті яйця, але нема ні яйця' | ukrainian-word-s
 Золоті´ я´йця, але´ нема´ ні яйця´
 ```
 
+Note: this example resolves the two different readings of `яйця` from
+context, which requires the Stanza backend
+(`pip install ukrainian-word-stress[stanza]`). The default lightweight
+install skips such ambiguous words instead of guessing — see
+[Disambiguation modes](#disambiguation-modes).
+
 
 ## Setup
+
+Requires Python 3.9+.
 
 ```bash
 $ pip install ukrainian-word-stress
 ```
 
-Note, that on the first call this will download around 500M of Stanza resources.
-The default location for this is `~/stanza_resources`
+This installs the lightweight dictionary-only version (megabytes, no
+model downloads). It covers the ~98.7% of dictionary word forms that have
+a single valid stress pattern and skips heteronyms (see
+[Disambiguation modes](#disambiguation-modes) below).
+
+For the highest accuracy, install the Stanza backend as well:
+
+```bash
+$ pip install ukrainian-word-stress[stanza]
+```
+
+With Stanza installed, the first call downloads around 500M of Stanza
+resources. The default location for this is `~/stanza_resources`
+
+> **Upgrading from 1.x:** stanza is no longer installed by default.
+> Use `pip install ukrainian-word-stress[stanza]` to keep the previous
+> behavior. Environments that already have stanza installed keep using
+> the Stanza backend automatically. Note that 2.0 also closes a few
+> lookup gaps in both modes (typographic apostrophes, words whose
+> readings all agree on stress), so some words that 1.x left unstressed
+> now receive a stress mark.
+
+
+### Disambiguation modes
+
+Most Ukrainian word forms (98.7% of the 2.9M dictionary entries) have
+exactly one valid stress pattern — a dictionary lookup answers them
+without any NLP. The rest are heteronyms (за́мок/замо́к) that need context.
+The `disambiguation` parameter controls how they are handled:
+
+* `auto` (default): use Stanza if it is installed, otherwise
+  dictionary-only.
+
+* `stanza`: parse the text with Stanza's POS/morphology pipeline and pick
+  the reading that matches. Best accuracy. Requires the `[stanza]` extra
+  (PyTorch, ~500MB of models).
+
+* `dictionary`: lookup only, no dependencies beyond the bundled trie.
+  Unambiguous words are handled identically to the Stanza mode; heteronyms
+  follow the `on_ambiguity` strategy (`skip` by default, i.e. no stress
+  mark rather than a wrong one).
+
+```python
+>>> from ukrainian_word_stress import Stressifier, Disambiguation
+>>> stressify = Stressifier(disambiguation=Disambiguation.Dictionary)
+>>> stressify("Привіт, як справи?")
+'Приві´т, як спра´ви?'
+```
+
+Or from the command line:
+
+```bash
+$ echo 'Привіт, як справи?' | ukrainian-word-stress --disambiguation=dictionary
+```
+
+
+### Offline installation
+
+The dictionary-only mode works fully offline out of the box.
+
+For the Stanza mode on a machine with no internet access (or behind a
+firewall), the models can be downloaded elsewhere and copied over:
+
+1. On a machine with internet access, run:
+
+   ```bash
+   python -c "import stanza; stanza.download('uk')"
+   ```
+
+2. Copy the resulting `~/stanza_resources` directory to the same location
+   on the target machine.
+
+A custom location can be set with the `STANZA_RESOURCES_DIR` environment
+variable on both machines.
 
 
 ## Handling ambiguity
@@ -73,7 +157,8 @@ For example:
 * бло́хи - множина називного відмінку ("повсюди були бло́хи")
 
 We handle this more or less correctly by doing morphological and POS text parse
-with Stanza.
+with Stanza (in the `stanza` disambiguation mode; the `dictionary` mode
+falls back to the strategies below for all heteronyms).
 
 A much smaller category of heteronyms is where words have completely different meanings:
 
@@ -153,6 +238,8 @@ $ echo замок | ukrainian-word-stress --on-ambiguity=all
 ## More docs
 
 * [Dictionary format](./docs/dictionary_format.md)
+* [Adapting this approach to other languages](./docs/other_languages.md)
+* [Contributing (missing stresses, dev setup)](./CONTRIBUTING.md)
 
 
 [1]: https://en.wikipedia.org/wiki/Heteronym_(linguistics)

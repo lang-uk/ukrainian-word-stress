@@ -1,5 +1,5 @@
 from ukrainian_word_stress import find_accent_positions, Stressifier, OnAmbiguity
-import marisa_trie
+from ukrainian_word_stress.stressify_ import _load_dictionary
 import pytest
 
 
@@ -115,9 +115,7 @@ def test_find_accent_positions_mulitple(trie):
 
 @pytest.fixture(scope='module')
 def trie():
-    result = marisa_trie.BytesTrie()
-    result.load("./ukrainian_word_stress/data/stress.trie")
-    return result
+    return _load_dictionary()
 
 
 @pytest.fixture(scope='module')

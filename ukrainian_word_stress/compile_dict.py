@@ -3,7 +3,6 @@ import csv
 import sys
 import collections
 import logging
-import tqdm
 
 from ukrainian_word_stress.tags import TAGS, compress_tags
 
@@ -18,6 +17,7 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
     POS_SEP = TAGS['POS-separator']
     REC_SEP = TAGS['Record-separator']
     trie = []
+    ambiguous = 0
     by_basic = _parse_dictionary(csv_path)
     for basic, forms in by_basic.items():
         accents_options = len(set(form for form, _ in forms))
@@ -25,6 +25,7 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
             # no need to store tags if there's no ambiguity
             value = accent_pos(forms[0][0])
         else:
+            ambiguous += 1
             value = b''
             for form, tags in forms:
                 pos = accent_pos(form)
@@ -32,10 +33,20 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
                 if compressed not in value:
                     value += compressed
         trie.append((basic, value))
+
+    # This coverage figure is quoted in the docs (README, docstrings);
+    # update them if it changes noticeably after a dictionary rebuild
+    total = len(trie)
+    print(f"Compiled {total} word forms; "
+          f"{total - ambiguous} unambiguous ({(total - ambiguous) / total:.2%}), "
+          f"{ambiguous} need disambiguation ({ambiguous / total:.2%})",
+          file=sys.stderr)
     return marisa_trie.BytesTrie(trie)
 
 
 def _parse_dictionary(csv_path):
+    import tqdm  # dev-only dependency, install with `pip install ukrainian-word-stress[dev]`
+
     by_basic = collections.defaultdict(list)  # TODO: change to set
     skipped = 0
     for row in tqdm.tqdm(csv.DictReader(open(csv_path))):

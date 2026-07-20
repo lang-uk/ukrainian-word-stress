@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ukrainian-word-stress"
+description = "Find word stress for texts in Ukrainian"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Oleksiy Syvokon", email = "oleksiy.syvokon@gmail.com" },
+]
+requires-python = ">=3.9"
+dependencies = [
+    "marisa-trie>=1.1.0",
+]
+keywords = ["ukrainian", "nlp", "word", "stress", "accents", "dictionary", "linguistics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/lang-uk/ukrainian-word-stress"
+Repository = "https://github.com/lang-uk/ukrainian-word-stress"
+Issues = "https://github.com/lang-uk/ukrainian-word-stress/issues"
+
+[project.optional-dependencies]
+stanza = ["stanza>=1.7.0"]
+dev = ["tqdm", "ua-gec"]
+test = ["pytest", "coverage"]
+
+[project.scripts]
+ukrainian-word-stress = "ukrainian_word_stress.cli:main"
+
+[tool.setuptools]
+packages = ["ukrainian_word_stress"]
+
+[tool.setuptools.package-data]
+ukrainian_word_stress = ["data/stress.trie", "py.typed"]
+
+[tool.setuptools.dynamic]
+version = { attr = "ukrainian_word_stress.version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

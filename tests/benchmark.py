@@ -1,6 +1,6 @@
 import ua_gec
 import time
-from ukrainian_word_stress import Stressifier
+from ukrainian_word_stress import Disambiguation, Stressifier
 
 "42306 parsed in 38.603643499998725 seconds (1095.9069187342743 tokens/sec)"
 
@@ -8,7 +8,9 @@ from ukrainian_word_stress import Stressifier
 def benchmark():
     corpus = ua_gec.Corpus('test')
     text = '\n'.join([doc.target for doc in corpus])
-    stressify = Stressifier()
+    # The benchmark measures the Stanza parse specifically and calls
+    # stressify.nlp directly, so request the stanza backend explicitly.
+    stressify = Stressifier(disambiguation=Disambiguation.Stanza)
 
     t0 = time.perf_counter()
     parsed = stressify.nlp(text)
