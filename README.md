@@ -75,9 +75,7 @@ resolve heteronyms from context. On the first call it downloads around
 
 > **Note:** 2.0.0 briefly made the lightweight version (below) the
 > default install; since 2.1.0 the default installs Stanza again,
-> matching 1.x. Since 2.0.0, some words that 1.x left unstressed
-> (typographic apostrophes, words whose readings agree on stress)
-> receive a stress mark in both modes.
+> matching 1.x.
 
 
 ### Lightweight installation (no Stanza, no PyTorch)
@@ -133,6 +131,10 @@ Or from the command line:
 ```bash
 $ echo 'Привіт, як справи?' | ukrainian-word-stress --disambiguation=dictionary
 ```
+
+Since 2.0.0, some words that 1.x left unstressed (typographic
+apostrophes, words whose readings agree on stress) receive a stress mark
+in both modes.
 
 
 ### Offline installation
