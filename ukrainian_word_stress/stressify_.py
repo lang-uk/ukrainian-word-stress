@@ -232,10 +232,12 @@ def _trie_value(trie: marisa_trie.BytesTrie, word: str) -> list | None:
         # Fast path: the vast majority of tokens match as-is
         return trie[word]
 
+    candidates = [word.lower(), word.title(), word.capitalize()]
     normalized = word.translate(_APOSTROPHES)
-    for candidate in (word.lower(), word.title(), word.capitalize(),
-                      normalized, normalized.lower(), normalized.title(),
-                      normalized.capitalize()):
+    if normalized != word:
+        candidates += [normalized, normalized.lower(), normalized.title(),
+                       normalized.capitalize()]
+    for candidate in candidates:
         if candidate != word and candidate in trie:
             return trie[candidate]
     return None

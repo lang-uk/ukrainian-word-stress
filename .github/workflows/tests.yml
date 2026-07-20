@@ -30,12 +30,14 @@ jobs:
         run: echo "version=$(python -c 'import stanza; print(stanza.__version__)')" >> "$GITHUB_OUTPUT"
 
       - name: Cache Stanza resources
+        id: stanza-cache
         uses: actions/cache@v4
         with:
           path: ~/stanza_resources
           key: stanza-resources-uk-${{ steps.stanza.outputs.version }}
 
       - name: Download Stanza models for Ukrainian
+        if: steps.stanza-cache.outputs.cache-hit != 'true'
         run: python -c "import stanza; stanza.download('uk', processors='tokenize,pos,mwt')"
 
       - name: Run tests
