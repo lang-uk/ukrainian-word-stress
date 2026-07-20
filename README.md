@@ -73,6 +73,12 @@ resolve heteronyms from context. On the first call it downloads around
 500M of Stanza resources; the default location for this is
 `~/stanza_resources`
 
+> **Note:** 2.0.0 briefly made the lightweight version (below) the
+> default install; since 2.1.0 the default installs Stanza again,
+> matching 1.x. Since 2.0.0, some words that 1.x left unstressed
+> (typographic apostrophes, words whose readings agree on stress)
+> receive a stress mark in both modes.
+
 
 #### Lightweight installation (no Stanza, no PyTorch)
 
@@ -94,12 +100,6 @@ Without stanza installed, `Stressifier()` automatically runs in the
 dictionary-only mode: it covers the ~98.7% of dictionary word forms that
 have a single valid stress pattern and skips heteronyms (see
 [Disambiguation modes](#disambiguation-modes) below).
-
-> **Note:** 2.0.0 briefly made the lightweight version the default
-> install; since 2.1.0 the default installs Stanza again, matching 1.x.
-> Since 2.0.0, some words that 1.x left unstressed (typographic
-> apostrophes, words whose readings agree on stress) receive a stress
-> mark in both modes.
 
 
 ### Disambiguation modes
