@@ -34,8 +34,9 @@ def compile(csv_path: str) -> marisa_trie.BytesTrie:
                     value += compressed
         trie.append((basic, value))
 
-    # This coverage figure is quoted in the docs (README, docstrings);
-    # update them if it changes noticeably after a dictionary rebuild
+    # This coverage figure is quoted in README.md, docs/other_languages.md,
+    # and the Stressifier docstring; update them if it changes noticeably
+    # after a dictionary rebuild
     total = len(trie)
     print(f"Compiled {total} word forms; "
           f"{total - ambiguous} unambiguous ({(total - ambiguous) / total:.2%}), "
