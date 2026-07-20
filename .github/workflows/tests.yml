@@ -26,7 +26,7 @@ jobs:
 
       - name: Get installed Stanza version
         id: stanza
-        run: echo "version=$(pip show stanza | awk '/^Version:/{print $2}')" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python -c 'import stanza; print(stanza.__version__)')" >> "$GITHUB_OUTPUT"
 
       - name: Cache Stanza resources
         uses: actions/cache@v4

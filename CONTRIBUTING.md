@@ -48,7 +48,7 @@ reports with word lists are the practical way to get corrections in.
 ## Development setup
 
 ```bash
-pip install -e .[stanza,dev,test]
+pip install -e .[dev,test]
 pytest
 ```
 

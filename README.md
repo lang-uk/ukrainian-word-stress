@@ -95,12 +95,11 @@ dictionary-only mode: it covers the ~98.7% of dictionary word forms that
 have a single valid stress pattern and skips heteronyms (see
 [Disambiguation modes](#disambiguation-modes) below).
 
-> **Note for 2.0.0 users:** 2.0.0 briefly made the lightweight version
-> the default install. Starting with 2.1.0, `pip install
-> ukrainian-word-stress` installs Stanza again, matching 1.x. Also since
-> 2.0.0, a few lookup gaps are closed in both modes (typographic
-> apostrophes, words whose readings all agree on stress), so some words
-> that 1.x left unstressed now receive a stress mark.
+> **Note:** 2.0.0 briefly made the lightweight version the default
+> install; since 2.1.0 the default installs Stanza again, matching 1.x.
+> Since 2.0.0, some words that 1.x left unstressed (typographic
+> apostrophes, words whose readings agree on stress) receive a stress
+> mark in both modes.
 
 
 ### Disambiguation modes
